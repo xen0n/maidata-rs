@@ -78,8 +78,8 @@ pub enum Length {
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct NumBeatsParams {
-    divisor: Option<u8>,
-    num: u8,
+    pub divisor: u8,
+    pub num: u8,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -100,11 +100,32 @@ pub struct HoldParams {
     pub len: Length,
 }
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct SlideParams {
-    pub start: Key,
-    pub end: Key,
-    pub stop_time: Option<Length>,
+    pub start: TapParams,
+    pub tracks: Vec<SlideTrack>,
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum SlideTrack {
+    Line(SlideTrackParams),
+    Arc(SlideTrackParams), // ???
+    CircumferenceLeft(SlideTrackParams),
+    CircumferenceRight(SlideTrackParams),
+    V(SlideTrackParams),
+    P(SlideTrackParams),
+    Q(SlideTrackParams),
+    S(SlideTrackParams),
+    Z(SlideTrackParams),
+    Pp(SlideTrackParams),
+    Qq(SlideTrackParams),
+    Angle(SlideTrackParams),
+    Spread(SlideTrackParams),
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct SlideTrackParams {
+    pub destination: TapParams,
+    pub interim: Option<TapParams>,
     pub len: Length,
-    // TODO: shape
 }

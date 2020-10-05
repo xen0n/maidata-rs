@@ -11,7 +11,14 @@ pub(crate) fn parse_maidata_insns(input: Span) -> nom::IResult<Span, Vec<RawInsn
 
 fn parse_one_maidata_insn(input: Span) -> nom::IResult<Span, RawInsn> {
     let (s, _) = multispace0(input)?;
-    let (s, insn) = nom::branch::alt((t_bpm, t_beat_divisor, t_rest, t_tap_single))(s)?;
+    let (s, insn) = nom::branch::alt((
+        t_bpm,
+        t_beat_divisor,
+        t_rest,
+        t_tap_single,
+        t_tap_multi_simplified,
+        t_hold,
+    ))(s)?;
     let (s, _) = multispace0(s)?;
 
     Ok((s, insn))
@@ -80,18 +87,86 @@ fn t_rest(input: Span) -> nom::IResult<Span, RawInsn> {
     Ok((s, RawInsn::Rest))
 }
 
-fn t_tap_single(input: Span) -> nom::IResult<Span, RawInsn> {
+fn t_tap_param(input: Span) -> nom::IResult<Span, TapParams> {
     let (s, _) = multispace0(input)?;
     let (s, key) = t_key(s)?;
-    let (s, _) = multispace0(s)?;
-    let (s, _) = t_note_sep(s)?;
     let (s, _) = multispace0(s)?;
 
     Ok((
         s,
-        RawInsn::Note(RawNoteInsn::Tap(TapParams {
+        TapParams {
             variant: TapVariant::Tap,
             key,
-        })),
+        },
     ))
+}
+
+fn t_tap_single(input: Span) -> nom::IResult<Span, RawInsn> {
+    let (s, _) = multispace0(input)?;
+    let (s, params) = t_tap_param(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, _) = t_note_sep(s)?;
+    let (s, _) = multispace0(s)?;
+
+    Ok((s, RawInsn::Note(RawNoteInsn::Tap(params))))
+}
+
+fn t_tap_multi_simplified(input: Span) -> nom::IResult<Span, RawInsn> {
+    use nom::multi::many1;
+
+    let (s, _) = multispace0(input)?;
+    // TODO: do whitespaces inside a taps bundle get ignored as well?
+    let (s, keys) = many1(t_key)(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, _) = t_note_sep(s)?;
+    let (s, _) = multispace0(s)?;
+
+    // all taps are regular ones when using simplified notation
+    let notes = keys
+        .into_iter()
+        .map(|key| {
+            RawNoteInsn::Tap(TapParams {
+                variant: TapVariant::Tap,
+                key,
+            })
+        })
+        .collect();
+
+    Ok((s, RawInsn::NoteBundle(notes)))
+}
+
+fn t_len(input: Span) -> nom::IResult<Span, Length> {
+    use nom::character::complete::char;
+    use nom::character::complete::digit1;
+
+    // TODO: absolute time support ('#')
+    let (s, _) = multispace0(input)?;
+    let (s, _) = char('[')(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, divisor_str) = digit1(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, _) = char(':')(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, num_str) = digit1(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, _) = char(']')(s)?;
+    let (s, _) = multispace0(s)?;
+
+    // TODO: handle conversion errors
+    let divisor = divisor_str.fragment().parse().unwrap();
+    let num = num_str.fragment().parse().unwrap();
+
+    Ok((s, Length::NumBeats(NumBeatsParams { divisor, num })))
+}
+
+fn t_hold(input: Span) -> nom::IResult<Span, RawInsn> {
+    use nom::character::complete::char;
+
+    let (s, _) = multispace0(input)?;
+    let (s, key) = t_key(s)?;
+    let (s, _) = char('h')(s)?;
+    let (s, len) = t_len(s)?;
+    let (s, _) = multispace0(s)?;
+
+    Ok((s, RawInsn::Note(RawNoteInsn::Hold(HoldParams { key, len }))))
 }

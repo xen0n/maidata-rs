@@ -6,7 +6,7 @@ pub use directives_ty::*;
 pub use notes_ty::*;
 pub(crate) use parser::parse_maidata_insns;
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum RawNoteInsn {
     Tap(TapParams),
     Hold(HoldParams),
