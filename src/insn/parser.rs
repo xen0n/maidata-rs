@@ -106,14 +106,22 @@ fn t_tap_param(input: Span) -> nom::IResult<Span, TapParams> {
     Ok((s, TapParams { variant, key }))
 }
 
-fn t_tap_single(input: Span) -> nom::IResult<Span, RawInsn> {
+fn t_tap(input: Span) -> nom::IResult<Span, RawNoteInsn> {
     let (s, _) = multispace0(input)?;
     let (s, params) = t_tap_param(s)?;
+    let (s, _) = multispace0(s)?;
+
+    Ok((s, RawNoteInsn::Tap(params)))
+}
+
+fn t_tap_single(input: Span) -> nom::IResult<Span, RawInsn> {
+    let (s, _) = multispace0(input)?;
+    let (s, note) = t_tap(s)?;
     let (s, _) = multispace0(s)?;
     let (s, _) = t_note_sep(s)?;
     let (s, _) = multispace0(s)?;
 
-    Ok((s, RawInsn::Note(RawNoteInsn::Tap(params))))
+    Ok((s, RawInsn::Note(note)))
 }
 
 fn t_tap_multi_simplified(input: Span) -> nom::IResult<Span, RawInsn> {
