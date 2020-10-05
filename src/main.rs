@@ -25,19 +25,21 @@ struct KeyVal<'a> {
 type Maidata<'a> = Vec<KeyVal<'a>>;
 
 fn lex_maidata<'a>(x: &'a str) -> Maidata<'a> {
-    // Presumably most maidata.txt edited on Windows have BOM due to being edited by Notepad,
-    // which is recommended by Japanese and Chinese simai tutorials.
-    //
-    // Eat it if present.
-    let x = x.strip_prefix("\u{feff}").unwrap_or(x);
-
     let input = Span::new(x);
     let output = lex_maidata_inner(input);
     output.ok().expect("parse maidata failed").1
 }
 
 fn lex_maidata_inner(s: Span) -> IResult<Span, Maidata> {
+    use nom::character::complete::char;
+    use nom::combinator::opt;
     use nom::multi::many0;
+
+    // Presumably most maidata.txt edited on Windows have BOM due to being edited by Notepad,
+    // which is recommended by Japanese and Chinese simai tutorials.
+    //
+    // Eat it if present.
+    let (s, _) = opt(char('\u{feff}'))(s)?;
 
     many0(lex_keyval)(s)
 }
