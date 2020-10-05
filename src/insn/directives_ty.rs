@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct BpmParams {
     pub new_bpm: f32,
 }

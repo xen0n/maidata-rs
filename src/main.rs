@@ -12,12 +12,14 @@ fn main() {
     for kv in lexed {
         let k = kv.key.fragment();
         let v = kv.val.fragment();
-        let v: std::borrow::Cow<str> = if k.starts_with("inote_") {
-            std::borrow::Cow::Owned(format!("<insn {} bytes long>", v.len()))
+
+        if k.starts_with("inote_") {
+            // parse as insns
+            println!("{}:", k);
+            dbg!(insn::parse_maidata_insns(kv.val));
         } else {
-            std::borrow::Cow::Borrowed(v)
+            println!("{} = \"{}\"", k, v);
         };
-        println!("{} = {}", k, v);
     }
 }
 
@@ -26,7 +28,7 @@ fn read_file<P: AsRef<std::path::Path>>(path: P) -> String {
     String::from_utf8(content).expect("decoding file content as utf-8 failed")
 }
 
-type Span<'a> = nom_locate::LocatedSpan<&'a str>;
+pub(crate) type Span<'a> = nom_locate::LocatedSpan<&'a str>;
 
 #[derive(Debug)]
 struct KeyVal<'a> {

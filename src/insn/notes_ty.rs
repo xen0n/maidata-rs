@@ -10,6 +10,29 @@ pub enum Key {
     K8,
 }
 
+#[derive(Clone, Debug)]
+pub enum KeyParseError {
+    InvalidKey(char),
+}
+
+impl std::convert::TryFrom<char> for Key {
+    type Error = KeyParseError;
+
+    fn try_from(x: char) -> Result<Self, Self::Error> {
+        match x {
+            '1' => Ok(Self::K1),
+            '2' => Ok(Self::K2),
+            '3' => Ok(Self::K3),
+            '4' => Ok(Self::K4),
+            '5' => Ok(Self::K5),
+            '6' => Ok(Self::K6),
+            '7' => Ok(Self::K7),
+            '8' => Ok(Self::K8),
+            _ => Err(KeyParseError::InvalidKey(x)),
+        }
+    }
+}
+
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum TouchSensor {
     A1,
@@ -47,7 +70,7 @@ pub enum TouchSensor {
     E8,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum Length {
     NumBeats(NumBeatsParams),
     Seconds(f32),
@@ -57,11 +80,6 @@ pub enum Length {
 pub struct NumBeatsParams {
     divisor: Option<u8>,
     num: u8,
-}
-
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
-pub struct RestParams {
-    pub len: Length,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -76,13 +94,13 @@ pub enum TapVariant {
     Break,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct HoldParams {
     pub key: Key,
     pub len: Length,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct SlideParams {
     pub start: Key,
     pub end: Key,
