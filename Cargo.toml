@@ -1,0 +1,9 @@
+[package]
+name = "maidata"
+version = "0.0.0"
+authors = ["WANG Xuerui <git@xen0n.name>"]
+edition = "2018"
+
+[dependencies]
+nom = "5"
+nom_locate = "2"
