@@ -19,6 +19,7 @@ fn parse_one_maidata_insn(input: Span) -> nom::IResult<Span, RawInsn> {
         t_tap_multi_simplified,
         t_hold_single,
         t_slide_single,
+        t_bundle,
     ))(s)?;
     let (s, _) = multispace0(s)?;
 
@@ -338,4 +339,45 @@ fn t_slide_single(input: Span) -> nom::IResult<Span, RawInsn> {
     let (s, _) = multispace0(s)?;
 
     Ok((s, RawInsn::Note(note)))
+}
+
+fn t_bundle_note(input: Span) -> nom::IResult<Span, RawNoteInsn> {
+    let (s, _) = multispace0(input)?;
+    let (s, note) = nom::branch::alt((t_tap, t_hold, t_slide))(s)?;
+    let (s, _) = multispace0(s)?;
+
+    Ok((s, note))
+}
+
+fn t_bundle_sep_note(input: Span) -> nom::IResult<Span, RawNoteInsn> {
+    use nom::character::complete::char;
+
+    let (s, _) = multispace0(input)?;
+    let (s, _) = char('/')(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, note) = t_bundle_note(s)?;
+    let (s, _) = multispace0(s)?;
+
+    Ok((s, note))
+}
+
+fn t_bundle(input: Span) -> nom::IResult<Span, RawInsn> {
+    use nom::multi::many1;
+
+    let (s, _) = multispace0(input)?;
+    let (s, first) = t_bundle_note(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, rest) = many1(t_bundle_sep_note)(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, _) = t_note_sep(s)?;
+    let (s, _) = multispace0(s)?;
+
+    let notes = {
+        let mut tmp = Vec::with_capacity(rest.len() + 1);
+        tmp.push(first);
+        tmp.extend(rest);
+        tmp
+    };
+
+    Ok((s, RawInsn::NoteBundle(notes)))
 }
