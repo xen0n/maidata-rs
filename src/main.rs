@@ -1,5 +1,4 @@
 use nom::IResult;
-use nom_locate::position;
 
 fn main() {
     let filename = std::env::args()
@@ -19,8 +18,6 @@ type Span<'a> = nom_locate::LocatedSpan<&'a str>;
 
 #[derive(Debug)]
 struct KeyVal<'a> {
-    pub key_pos: Span<'a>,
-    pub val_pos: Span<'a>,
     pub key: Span<'a>,
     pub val: Span<'a>,
 }
@@ -56,25 +53,15 @@ fn lex_keyval(s: Span) -> IResult<Span, KeyVal> {
     let (s, _) = multispace0(s)?;
 
     let (s, _) = char('&')(s)?;
-    let (s, key_pos) = position(s)?;
     let (s, key) = take_till(|x| x == '=')(s)?;
     let (s, _) = char('=')(s)?;
-    let (s, val_pos) = position(s)?;
     let (s, val) = take_till(|x| x == '&')(s)?;
 
     // strip off trailing newlines from value
     let num_bytes_to_remove = num_rightmost_whitespaces(val.fragment());
     let val = val.slice(0..val.fragment().len() - num_bytes_to_remove);
 
-    Ok((
-        s,
-        KeyVal {
-            key_pos,
-            val_pos,
-            key,
-            val,
-        },
-    ))
+    Ok((s, KeyVal { key, val }))
 }
 
 fn num_rightmost_whitespaces<S: AsRef<str>>(x: S) -> usize {
