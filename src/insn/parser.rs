@@ -89,17 +89,21 @@ fn t_rest(input: Span) -> nom::IResult<Span, RawInsn> {
 }
 
 fn t_tap_param(input: Span) -> nom::IResult<Span, TapParams> {
+    use nom::character::complete::char;
+    use nom::combinator::opt;
+
     let (s, _) = multispace0(input)?;
     let (s, key) = t_key(s)?;
     let (s, _) = multispace0(s)?;
+    let (s, is_break) = opt(char('b'))(s)?;
+    let (s, _) = multispace0(s)?;
 
-    Ok((
-        s,
-        TapParams {
-            variant: TapVariant::Tap,
-            key,
-        },
-    ))
+    let variant = match is_break {
+        Some(_) => TapVariant::Break,
+        None => TapVariant::Tap,
+    };
+
+    Ok((s, TapParams { variant, key }))
 }
 
 fn t_tap_single(input: Span) -> nom::IResult<Span, RawInsn> {
