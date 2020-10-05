@@ -1,5 +1,7 @@
 use nom::IResult;
 
+pub mod insn;
+
 fn main() {
     let filename = std::env::args()
         .nth(1)
@@ -11,7 +13,7 @@ fn main() {
         let k = kv.key.fragment();
         let v = kv.val.fragment();
         let v: std::borrow::Cow<str> = if k.starts_with("inote_") {
-            std::borrow::Cow::Owned(format!("<directives {} bytes long>", v.len()))
+            std::borrow::Cow::Owned(format!("<insn {} bytes long>", v.len()))
         } else {
             std::borrow::Cow::Borrowed(v)
         };
