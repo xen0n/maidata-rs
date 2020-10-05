@@ -17,7 +17,7 @@ fn parse_one_maidata_insn(input: Span) -> nom::IResult<Span, RawInsn> {
         t_rest,
         t_tap_single,
         t_tap_multi_simplified,
-        t_hold,
+        t_hold_single,
         t_slide_single,
     ))(s)?;
     let (s, _) = multispace0(s)?;
@@ -164,7 +164,7 @@ fn t_len(input: Span) -> nom::IResult<Span, Length> {
     Ok((s, Length::NumBeats(NumBeatsParams { divisor, num })))
 }
 
-fn t_hold(input: Span) -> nom::IResult<Span, RawInsn> {
+fn t_hold(input: Span) -> nom::IResult<Span, RawNoteInsn> {
     use nom::character::complete::char;
 
     let (s, _) = multispace0(input)?;
@@ -173,7 +173,17 @@ fn t_hold(input: Span) -> nom::IResult<Span, RawInsn> {
     let (s, len) = t_len(s)?;
     let (s, _) = multispace0(s)?;
 
-    Ok((s, RawInsn::Note(RawNoteInsn::Hold(HoldParams { key, len }))))
+    Ok((s, RawNoteInsn::Hold(HoldParams { key, len })))
+}
+
+fn t_hold_single(input: Span) -> nom::IResult<Span, RawInsn> {
+    let (s, _) = multispace0(input)?;
+    let (s, note) = t_hold(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, _) = t_note_sep(s)?;
+    let (s, _) = multispace0(s)?;
+
+    Ok((s, RawInsn::Note(note)))
 }
 
 // FxE[len] where x is single char
