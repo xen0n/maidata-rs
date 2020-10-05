@@ -320,13 +320,33 @@ fn t_slide_track(input: Span) -> nom::IResult<Span, SlideTrack> {
     ))(input)
 }
 
+fn t_slide_sep_track(input: Span) -> nom::IResult<Span, SlideTrack> {
+    use nom::character::complete::char;
+
+    let (s, _) = multispace0(input)?;
+    let (s, _) = char('*')(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, track) = t_slide_track(s)?;
+    let (s, _) = multispace0(s)?;
+
+    Ok((s, track))
+}
+
 fn t_slide(input: Span) -> nom::IResult<Span, RawNoteInsn> {
-    use nom::multi::many1;
+    use nom::multi::many0;
 
     let (s, _) = multispace0(input)?;
     let (s, start) = t_tap_param(s)?;
-    let (s, tracks) = many1(t_slide_track)(s)?;
+    let (s, first_track) = t_slide_track(s)?;
+    let (s, rest_track) = many0(t_slide_sep_track)(s)?;
     let (s, _) = multispace0(s)?;
+
+    let tracks = {
+        let mut tmp = Vec::with_capacity(rest_track.len() + 1);
+        tmp.push(first_track);
+        tmp.extend(rest_track);
+        tmp
+    };
 
     Ok((s, RawNoteInsn::Slide(SlideParams { start, tracks })))
 }
