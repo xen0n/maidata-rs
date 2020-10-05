@@ -6,7 +6,17 @@ fn main() {
         .expect("usage: $0 <path/to/maidata.txt>");
     let content = read_file(&filename);
     let lexed = lex_maidata(&content);
-    println!("{:?}", lexed);
+
+    for kv in lexed {
+        let k = kv.key.fragment();
+        let v = kv.val.fragment();
+        let v: std::borrow::Cow<str> = if k.starts_with("inote_") {
+            std::borrow::Cow::Owned(format!("<directives {} bytes long>", v.len()))
+        } else {
+            std::borrow::Cow::Borrowed(v)
+        };
+        println!("{} = {}", k, v);
+    }
 }
 
 fn read_file<P: AsRef<std::path::Path>>(path: P) -> String {
