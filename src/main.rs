@@ -16,7 +16,12 @@ fn main() {
         if k.starts_with("inote_") {
             // parse as insns
             println!("{}:", k);
-            dbg!(insn::parse_maidata_insns(kv.val));
+            let insns = insn::parse_maidata_insns(kv.val);
+            if let Ok((_, insns)) = insns {
+                println!("{:#?}", insns);
+            } else {
+                panic!("insn parsing failed");
+            }
         } else {
             println!("{} = \"{}\"", k, v);
         };

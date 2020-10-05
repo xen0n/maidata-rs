@@ -6,7 +6,14 @@ use crate::Span;
 pub(crate) fn parse_maidata_insns(input: Span) -> nom::IResult<Span, Vec<RawInsn>> {
     use nom::multi::many0;
 
-    many0(parse_one_maidata_insn)(input)
+    let (s, insns) = many0(parse_one_maidata_insn)(input)?;
+    let (s, _) = t_eof(s)?;
+
+    Ok((s, insns))
+}
+
+fn t_eof(input: Span) -> nom::IResult<Span, Span> {
+    nom::eof!(input,)
 }
 
 fn parse_one_maidata_insn(input: Span) -> nom::IResult<Span, RawInsn> {
