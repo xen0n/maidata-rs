@@ -343,7 +343,8 @@ fn t_slide_single(input: Span) -> nom::IResult<Span, RawInsn> {
 
 fn t_bundle_note(input: Span) -> nom::IResult<Span, RawNoteInsn> {
     let (s, _) = multispace0(input)?;
-    let (s, note) = nom::branch::alt((t_tap, t_hold, t_slide))(s)?;
+    // NOTE: tap must come last as it can match on the simplest key, blocking holds and slides from parsing
+    let (s, note) = nom::branch::alt((t_hold, t_slide, t_tap))(s)?;
     let (s, _) = multispace0(s)?;
 
     Ok((s, note))
