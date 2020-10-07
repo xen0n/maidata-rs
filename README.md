@@ -8,6 +8,10 @@ in the maimai mapping community.
 [simai]: https://w.atwiki.jp/simai/
 [format]: https://w.atwiki.jp/simai/pages/25.html
 
+Currently very much WIP, expect a lot of breakages. Don't use in production.
+
+项目目前处于很早的阶段，尚未施工完成，不能保证兼容，不要用。
+
 ## Supported `maidata.txt` features
 
 General format features:
@@ -24,8 +28,8 @@ Map definition instructions:
 * [ ] end mark `E`
 * [x] TAP `B,`
     - [x] simplified BOTH/EACH TAP form (`16` `38` etc.; `123` and such are also allowed)
-    - [x] BREAK spec `Bb,`
-    - [ ] star-shaped `B$,` `Bb$, B$b,` `B$$,`
+    - [x] BREAK modifier `Bb,`
+    - [ ] star-shape modifier `B$,` `Bb$, B$b,` `B$$,`
 * [x] HOLD `Bh[length],`
     - [x] normal duration spec `[x:y]`
     - [ ] absolute duration spec `[#float]`
