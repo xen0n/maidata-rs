@@ -20,4 +20,5 @@ pub enum RawInsn {
     Rest,
     Note(RawNoteInsn),
     NoteBundle(Vec<RawNoteInsn>),
+    EndMark,
 }

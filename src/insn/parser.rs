@@ -27,10 +27,19 @@ fn parse_one_maidata_insn(input: Span) -> nom::IResult<Span, RawInsn> {
         t_hold_single,
         t_slide_single,
         t_bundle,
+        t_end_mark,
     ))(s)?;
     let (s, _) = multispace0(s)?;
 
     Ok((s, insn))
+}
+
+fn t_end_mark(input: Span) -> nom::IResult<Span, RawInsn> {
+    use nom::character::complete::char;
+
+    let (s, _) = multispace0(input)?;
+    let (s, _) = char('E')(s)?;
+    Ok((s, RawInsn::EndMark))
 }
 
 fn t_note_sep(input: Span) -> nom::IResult<Span, ()> {
