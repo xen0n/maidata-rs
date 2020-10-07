@@ -123,6 +123,23 @@ pub enum SlideTrack {
     Spread(SlideTrackParams),
 }
 
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum SlideShape {
+    Line,
+    Arc,
+    CircumferenceLeft,
+    CircumferenceRight,
+    V,
+    P,
+    Q,
+    S,
+    Z,
+    Pp,
+    Qq,
+    Angle,
+    Spread,
+}
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct SlideTrackParams {
     pub destination: TapParams,

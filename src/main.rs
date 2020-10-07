@@ -1,6 +1,7 @@
 use nom::IResult;
 
 pub mod insn;
+pub mod materialize;
 
 fn main() {
     let filename = std::env::args()
