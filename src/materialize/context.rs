@@ -1,6 +1,8 @@
 use super::Note;
 use crate::insn;
-use crate::materialize::{MaterializedSlideTrack, MaterializedTap, MaterializedTapShape};
+use crate::materialize::{
+    MaterializedHold, MaterializedSlideTrack, MaterializedTap, MaterializedTapShape,
+};
 
 pub(crate) struct MaterializationContext {
     // TODO: is slides' default stop time really independent of BPM changes?
@@ -78,7 +80,10 @@ impl MaterializationContext {
                 vec![Note::Tap(m_params)]
             }
             insn::RawNoteInsn::Slide(params) => materialize_slide(ts, self.curr_beat_dur, params),
-            insn::RawNoteInsn::Hold(params) => todo!(),
+            insn::RawNoteInsn::Hold(params) => {
+                let m_params = materialize_hold_params(ts, self.curr_beat_dur, params);
+                vec![Note::Hold(m_params)]
+            }
         }
     }
 }
@@ -147,6 +152,14 @@ fn materialize_slide_track_params(
         destination: params.destination.key,
         interim: params.interim.map(|x| x.key),
         shape,
+    }
+}
+
+fn materialize_hold_params(ts: f32, beat_dur: f32, p: &insn::HoldParams) -> MaterializedHold {
+    MaterializedHold {
+        ts,
+        dur: materialize_duration(p.len, beat_dur),
+        key: p.key,
     }
 }
 
