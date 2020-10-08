@@ -19,7 +19,9 @@ fn main() {
             println!("{}:", k);
             let insns = insn::parse_maidata_insns(kv.val);
             if let Ok((_, insns)) = insns {
-                println!("{:#?}", insns);
+                let mut mcx = materialize::context::MaterializationContext::with_offset(0.0);
+                let notes = mcx.materialize_insns(insns.iter());
+                println!("<{} notes>", notes.len());
             } else {
                 panic!("insn parsing failed");
             }
