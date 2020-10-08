@@ -123,6 +123,44 @@ pub enum SlideTrack {
     Spread(SlideTrackParams),
 }
 
+impl SlideTrack {
+    pub fn shape(&self) -> SlideShape {
+        match self {
+            Self::Line(_) => SlideShape::Line,
+            Self::Arc(_) => SlideShape::Arc,
+            Self::CircumferenceLeft(_) => SlideShape::CircumferenceLeft,
+            Self::CircumferenceRight(_) => SlideShape::CircumferenceRight,
+            Self::V(_) => SlideShape::V,
+            Self::P(_) => SlideShape::P,
+            Self::Q(_) => SlideShape::Q,
+            Self::S(_) => SlideShape::S,
+            Self::Z(_) => SlideShape::Z,
+            Self::Pp(_) => SlideShape::Pp,
+            Self::Qq(_) => SlideShape::Qq,
+            Self::Angle(_) => SlideShape::Angle,
+            Self::Spread(_) => SlideShape::Spread,
+        }
+    }
+
+    pub fn params(&self) -> &SlideTrackParams {
+        match self {
+            SlideTrack::Line(p) => p,
+            SlideTrack::Arc(p) => p,
+            SlideTrack::CircumferenceLeft(p) => p,
+            SlideTrack::CircumferenceRight(p) => p,
+            SlideTrack::V(p) => p,
+            SlideTrack::P(p) => p,
+            SlideTrack::Q(p) => p,
+            SlideTrack::S(p) => p,
+            SlideTrack::Z(p) => p,
+            SlideTrack::Pp(p) => p,
+            SlideTrack::Qq(p) => p,
+            SlideTrack::Angle(p) => p,
+            SlideTrack::Spread(p) => p,
+        }
+    }
+}
+
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum SlideShape {
     Line,
@@ -138,6 +176,12 @@ pub enum SlideShape {
     Qq,
     Angle,
     Spread,
+}
+
+impl From<SlideTrack> for SlideShape {
+    fn from(x: SlideTrack) -> Self {
+        x.shape()
+    }
 }
 
 #[derive(Clone, PartialEq, Debug)]

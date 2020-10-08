@@ -1,7 +1,11 @@
 use super::Note;
 use crate::insn;
+use crate::materialize::{MaterializedSlideTrack, MaterializedTap, MaterializedTapShape};
 
 pub(crate) struct MaterializationContext {
+    // TODO: is slides' default stop time really independent of BPM changes?
+    // currently it is dependent -- add a separate non-changing value (initialized by the "wholebpm"
+    // thing) to move to independent
     curr_beat_dur: f32,
     curr_note_dur: f32,
     curr_ts: f32,
@@ -69,8 +73,11 @@ impl MaterializationContext {
 
     fn materialize_raw_note(&self, ts: f32, raw_note: &insn::RawNoteInsn) -> Vec<Note> {
         match raw_note {
-            insn::RawNoteInsn::Tap(params) => todo!(),
-            insn::RawNoteInsn::Slide(params) => todo!(),
+            insn::RawNoteInsn::Tap(params) => {
+                let m_params = materialize_tap_params(ts, params, false);
+                vec![Note::Tap(m_params)]
+            }
+            insn::RawNoteInsn::Slide(params) => materialize_slide(ts, self.curr_beat_dur, params),
             insn::RawNoteInsn::Hold(params) => todo!(),
         }
     }
@@ -82,4 +89,70 @@ fn bpm_to_beat_dur(bpm: f32) -> f32 {
 
 fn divide_beat(beat_dur: f32, beat_divisor: u8) -> f32 {
     beat_dur * 4.0 / (beat_divisor as f32)
+}
+
+fn materialize_tap_params(ts: f32, p: &insn::TapParams, is_slide_star: bool) -> MaterializedTap {
+    let shape = match (is_slide_star, p.variant) {
+        (false, insn::TapVariant::Tap) => MaterializedTapShape::Ring,
+        (false, insn::TapVariant::Break) => MaterializedTapShape::Break,
+        (true, _) => MaterializedTapShape::Star,
+    };
+
+    MaterializedTap {
+        ts,
+        key: p.key,
+        shape,
+    }
+}
+
+/// slide insn -> `vec![star tap, track, track, ...]`
+fn materialize_slide(ts: f32, beat_dur: f32, p: &insn::SlideParams) -> Vec<Note> {
+    // star
+    let star = Note::Tap(materialize_tap_params(ts, &p.start, true));
+    let start_key = p.start.key;
+
+    let tracks = p.tracks.iter().map(|track| {
+        Note::SlideTrack(materialize_slide_track_params(
+            ts, beat_dur, start_key, track,
+        ))
+    });
+
+    let mut result = Vec::with_capacity(tracks.len() + 1);
+    result.push(star);
+    result.extend(tracks);
+    result
+}
+
+fn materialize_slide_track_params(
+    ts: f32,
+    beat_dur: f32,
+    start_key: insn::Key,
+    track: &insn::SlideTrack,
+) -> MaterializedSlideTrack {
+    let shape = track.shape();
+    let params = track.params();
+
+    // in simai, stop time is actually encoded (overridden) in the duration spec of individual
+    // slide track
+    //
+    // TODO: currently overriding stop time is not implemented, hardcoded to 1 beat
+    let stop_time = beat_dur;
+    let start_ts = ts + stop_time;
+
+    MaterializedSlideTrack {
+        ts,
+        start_ts,
+        dur: materialize_duration(params.len, beat_dur),
+        start: start_key,
+        destination: params.destination.key,
+        interim: params.interim.map(|x| x.key),
+        shape,
+    }
+}
+
+fn materialize_duration(x: insn::Length, beat_dur: f32) -> f32 {
+    match x {
+        insn::Length::NumBeats(p) => divide_beat(beat_dur, p.divisor) * (p.num as f32),
+        insn::Length::Seconds(x) => x,
+    }
 }
