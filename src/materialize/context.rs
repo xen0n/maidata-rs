@@ -22,6 +22,18 @@ impl MaterializationContext {
         }
     }
 
+    /// Materialize a list of raw instructions into notes.
+    pub(crate) fn materialize_insns<'a, I: IntoIterator<Item = &'a insn::RawInsn>>(
+        &mut self,
+        insns: I,
+    ) -> Vec<Note> {
+        insns
+            .into_iter()
+            .map(|insn| self.materialize_raw_insn(insn))
+            .flatten()
+            .collect()
+    }
+
     /// Read in one raw instruction and materialize into note(s) if applicable.
     pub(crate) fn materialize_raw_insn(&mut self, insn: &insn::RawInsn) -> Vec<Note> {
         match insn {
