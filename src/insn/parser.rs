@@ -211,12 +211,14 @@ fn t_hold_single(input: Span) -> nom::IResult<Span, RawInsn> {
     Ok((s, RawInsn::Note(note)))
 }
 
-// FxE[len] where x is single char
-// covers everything except FppE FqqE and FVRE
+// FxE[len]
+// covers everything except FVRE
 macro_rules! define_slide_track {
     (@ $fn_name: ident, $recog: expr, $variant: ident) => {
+        #[allow(unused_imports)]
         fn $fn_name(input: Span) -> nom::IResult<Span, SlideTrack> {
             use nom::character::complete::char;
+            use nom::bytes::complete::tag;
 
             let (s, _) = multispace0(input)?;
             let (s, _) = $recog(s)?;
@@ -241,6 +243,10 @@ macro_rules! define_slide_track {
     ($fn_name: ident, char $ch: expr, $variant: ident) => {
         define_slide_track!(@ $fn_name, char($ch), $variant);
     };
+
+    ($fn_name: ident, tag $tag: expr, $variant: ident) => {
+        define_slide_track!(@ $fn_name, tag($tag), $variant);
+    };
 }
 
 define_slide_track!(t_slide_track_line, char '-', Line);
@@ -252,51 +258,9 @@ define_slide_track!(t_slide_track_p, char 'p', P);
 define_slide_track!(t_slide_track_q, char 'q', Q);
 define_slide_track!(t_slide_track_s, char 's', S);
 define_slide_track!(t_slide_track_z, char 'z', Z);
+define_slide_track!(t_slide_track_pp, tag "pp", Pp);
+define_slide_track!(t_slide_track_qq, tag "qq", Qq);
 define_slide_track!(t_slide_track_spread, char 'w', Spread);
-
-fn t_slide_track_pp(input: Span) -> nom::IResult<Span, SlideTrack> {
-    use nom::bytes::complete::tag;
-
-    let (s, _) = multispace0(input)?;
-    let (s, _) = tag("pp")(s)?;
-    let (s, _) = multispace0(s)?;
-    // TODO: can slide ends be breaks?
-    let (s, destination) = t_tap_param(s)?;
-    let (s, _) = multispace0(s)?;
-    let (s, len) = t_len(s)?;
-    let (s, _) = multispace0(s)?;
-
-    Ok((
-        s,
-        SlideTrack::Pp(SlideTrackParams {
-            destination,
-            interim: None,
-            len,
-        }),
-    ))
-}
-
-fn t_slide_track_qq(input: Span) -> nom::IResult<Span, SlideTrack> {
-    use nom::bytes::complete::tag;
-
-    let (s, _) = multispace0(input)?;
-    let (s, _) = tag("qq")(s)?;
-    let (s, _) = multispace0(s)?;
-    // TODO: can slide ends be breaks?
-    let (s, destination) = t_tap_param(s)?;
-    let (s, _) = multispace0(s)?;
-    let (s, len) = t_len(s)?;
-    let (s, _) = multispace0(s)?;
-
-    Ok((
-        s,
-        SlideTrack::Qq(SlideTrackParams {
-            destination,
-            interim: None,
-            len,
-        }),
-    ))
-}
 
 fn t_slide_track_angle(input: Span) -> nom::IResult<Span, SlideTrack> {
     use nom::character::complete::char;
