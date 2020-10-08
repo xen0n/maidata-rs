@@ -214,12 +214,12 @@ fn t_hold_single(input: Span) -> nom::IResult<Span, RawInsn> {
 // FxE[len] where x is single char
 // covers everything except FppE FqqE and FVRE
 macro_rules! define_slide_track {
-    ($fn_name: ident, $ch: expr, $variant: ident) => {
+    (@ $fn_name: ident, $recog: expr, $variant: ident) => {
         fn $fn_name(input: Span) -> nom::IResult<Span, SlideTrack> {
             use nom::character::complete::char;
 
             let (s, _) = multispace0(input)?;
-            let (s, _) = char($ch)(s)?;
+            let (s, _) = $recog(s)?;
             let (s, _) = multispace0(s)?;
             // TODO: can slide ends be breaks?
             let (s, destination) = t_tap_param(s)?;
@@ -237,18 +237,22 @@ macro_rules! define_slide_track {
             ))
         }
     };
+
+    ($fn_name: ident, char $ch: expr, $variant: ident) => {
+        define_slide_track!(@ $fn_name, char($ch), $variant);
+    };
 }
 
-define_slide_track!(t_slide_track_line, '-', Line);
-define_slide_track!(t_slide_track_arc, '^', Arc);
-define_slide_track!(t_slide_track_circ_left, '<', CircumferenceLeft);
-define_slide_track!(t_slide_track_circ_right, '>', CircumferenceRight);
-define_slide_track!(t_slide_track_v, 'v', V);
-define_slide_track!(t_slide_track_p, 'p', P);
-define_slide_track!(t_slide_track_q, 'q', Q);
-define_slide_track!(t_slide_track_s, 's', S);
-define_slide_track!(t_slide_track_z, 'z', Z);
-define_slide_track!(t_slide_track_spread, 'w', Spread);
+define_slide_track!(t_slide_track_line, char '-', Line);
+define_slide_track!(t_slide_track_arc, char '^', Arc);
+define_slide_track!(t_slide_track_circ_left, char '<', CircumferenceLeft);
+define_slide_track!(t_slide_track_circ_right, char '>', CircumferenceRight);
+define_slide_track!(t_slide_track_v, char 'v', V);
+define_slide_track!(t_slide_track_p, char 'p', P);
+define_slide_track!(t_slide_track_q, char 'q', Q);
+define_slide_track!(t_slide_track_s, char 's', S);
+define_slide_track!(t_slide_track_z, char 'z', Z);
+define_slide_track!(t_slide_track_spread, char 'w', Spread);
 
 fn t_slide_track_pp(input: Span) -> nom::IResult<Span, SlideTrack> {
     use nom::bytes::complete::tag;
