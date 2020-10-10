@@ -36,3 +36,21 @@ fn read_file<P: AsRef<std::path::Path>>(path: P) -> String {
 }
 
 pub(crate) type Span<'a> = nom_locate::LocatedSpan<&'a str>;
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum Difficulty {
+    /// The EASY difficulty.
+    Easy = 1,
+    /// The BASIC difficulty.
+    Basic = 2,
+    /// The ADVANCED difficulty.
+    Advanced = 3,
+    /// The EXPERT difficulty.
+    Expert = 4,
+    /// The MASTER difficulty.
+    Master = 5,
+    /// The Re:MASTER difficulty.
+    ReMaster = 6,
+    /// The ORIGINAL difficulty, previously called mai:EDIT in 2simai.
+    Original = 7,
+}
