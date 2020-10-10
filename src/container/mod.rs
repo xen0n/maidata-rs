@@ -27,7 +27,17 @@ fn lex_maidata_inner(s: Span) -> IResult<Span, Maidata> {
     // Eat it if present.
     let (s, _) = opt(char('\u{feff}'))(s)?;
 
-    many0(lex_keyval)(s)
+    let (s, result) = many0(lex_keyval)(s)?;
+
+    // require EOF
+    let (s, _) = t_eof(s)?;
+
+    Ok((s, result))
+}
+
+// TODO: dedup (with insn::parser::t_eof)
+fn t_eof(input: Span) -> nom::IResult<Span, Span> {
+    nom::eof!(input,)
 }
 
 fn lex_keyval(s: Span) -> IResult<Span, KeyVal> {
