@@ -1,6 +1,7 @@
 use nom::IResult;
 
 use crate::Span;
+use nom::lib::std::collections::HashMap;
 
 #[derive(Debug)]
 pub(crate) struct KeyVal<'a> {
@@ -8,15 +9,202 @@ pub(crate) struct KeyVal<'a> {
     pub val: Span<'a>,
 }
 
-pub(crate) type Maidata<'a> = Vec<KeyVal<'a>>;
+#[derive(Clone, Debug)]
+pub(crate) struct Maidata {
+    title: String,
+    artist: String,
 
-pub(crate) fn lex_maidata<'a>(x: &'a str) -> Maidata<'a> {
-    let input = Span::new(x);
-    let output = lex_maidata_inner(input);
-    output.ok().expect("parse maidata failed").1
+    fallback_designer: Option<String>,
+    fallback_offset: Option<f32>,
+    fallback_single_message: Option<String>,
+
+    // XXX: is wholebpm mandatory?
+    star_bpm: Option<f32>,
+
+    difficulties: Vec<BeatmapData>,
 }
 
-fn lex_maidata_inner(s: Span) -> IResult<Span, Maidata> {
+impl Default for Maidata {
+    fn default() -> Self {
+        Self {
+            title: String::default(),
+            artist: String::default(),
+            fallback_designer: None,
+            fallback_offset: None,
+            fallback_single_message: None,
+            star_bpm: None,
+            difficulties: vec![],
+        }
+    }
+}
+
+impl Maidata {
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
+    pub fn artist(&self) -> &str {
+        &self.artist
+    }
+
+    pub fn iter_difficulties(&self) -> impl Iterator<Item = AssociatedBeatmapData> {
+        self.difficulties
+            .iter()
+            .map(move |diff| AssociatedBeatmapData {
+                global: self,
+                map: diff,
+            })
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct BeatmapData {
+    difficulty: crate::Difficulty,
+    designer: Option<String>,
+    offset: Option<f32>,
+    level: Option<crate::Level>,
+    insns: Vec<crate::insn::RawInsn>,
+    single_message: Option<String>,
+}
+
+impl BeatmapData {
+    pub(crate) fn default_with_difficulty(difficulty: crate::Difficulty) -> Self {
+        Self {
+            difficulty,
+            designer: None,
+            offset: None,
+            level: None,
+            insns: vec![],
+            single_message: None,
+        }
+    }
+}
+
+pub struct AssociatedBeatmapData<'a> {
+    global: &'a Maidata,
+    map: &'a BeatmapData,
+}
+
+impl<'a> AssociatedBeatmapData<'a> {
+    pub fn difficulty(&self) -> crate::Difficulty {
+        self.map.difficulty
+    }
+
+    pub fn designer(&self) -> Option<&str> {
+        self.map
+            .designer
+            .as_deref()
+            .or(self.global.fallback_designer.as_deref())
+    }
+
+    pub fn offset(&self) -> Option<f32> {
+        self.map.offset.or(self.global.fallback_offset)
+    }
+
+    pub fn level(&self) -> Option<crate::Level> {
+        self.map.level.clone()
+    }
+
+    pub fn iter_insns(&self) -> impl Iterator<Item = &crate::insn::RawInsn> {
+        self.map.insns.iter()
+    }
+
+    pub fn single_message(&self) -> Option<&str> {
+        self.map
+            .single_message
+            .as_deref()
+            .or(self.global.fallback_single_message.as_deref())
+    }
+}
+
+pub(crate) fn lex_maidata<'a>(x: &'a str) -> Maidata {
+    let input = Span::new(x);
+    let output = lex_maidata_inner(input);
+
+    let kvs = output.ok().expect("parse maidata failed").1;
+
+    let mut result = Maidata::default();
+    let mut diff_map: HashMap<crate::Difficulty, BeatmapData> = HashMap::new();
+    for kv in kvs {
+        let k = *kv.key.fragment();
+        let v = *kv.val.fragment();
+
+        let mut handled = false;
+        // difficulty-specific variables
+        macro_rules! handle_one_diff {
+            ( $num: literal => $diff: expr ) => {
+                match k {
+                    concat!("des_", stringify!($num)) => {
+                        let mut data = diff_map
+                            .entry($diff)
+                            .or_insert(BeatmapData::default_with_difficulty($diff));
+                        data.designer = Some(v.to_owned());
+                        handled = true;
+                    }
+                    concat!("first_", stringify!($num)) => {
+                        let mut data = diff_map
+                            .entry($diff)
+                            .or_insert(BeatmapData::default_with_difficulty($diff));
+                        data.offset = Some(v.parse().expect("parse offset failed"));
+                        handled = true;
+                    }
+                    concat!("inote_", stringify!($num)) => {
+                        let mut data = diff_map
+                            .entry($diff)
+                            .or_insert(BeatmapData::default_with_difficulty($diff));
+                        data.insns = crate::insn::parse_maidata_insns(kv.val)
+                            .ok()
+                            .expect("parse insns failed")
+                            .1;
+                        handled = true;
+                    }
+                    concat!("lv_", stringify!($num)) => {
+                        // TODO
+                    }
+                    concat!("smsg_", stringify!($num)) => {
+                        let mut data = diff_map
+                            .entry($diff)
+                            .or_insert(BeatmapData::default_with_difficulty($diff));
+                        data.single_message = Some(v.to_owned());
+                        handled = true;
+                    }
+                    _ => {}
+                }
+            };
+        }
+
+        handle_one_diff!(1 => crate::Difficulty::Easy);
+        handle_one_diff!(2 => crate::Difficulty::Basic);
+        handle_one_diff!(3 => crate::Difficulty::Advanced);
+        handle_one_diff!(4 => crate::Difficulty::Expert);
+        handle_one_diff!(5 => crate::Difficulty::Master);
+        handle_one_diff!(6 => crate::Difficulty::ReMaster);
+        handle_one_diff!(7 => crate::Difficulty::Original);
+        if handled {
+            continue;
+        }
+
+        // global variables
+        match k {
+            "title" => {
+                result.title = v.to_owned();
+            }
+            "artist" => {
+                result.artist = v.to_owned();
+            }
+            _ => println!("unimplemented property: {} = {}", k, v),
+        }
+    }
+
+    // put parsed difficulties into result
+    result
+        .difficulties
+        .extend(diff_map.into_iter().map(|(_, data)| data));
+
+    result
+}
+
+fn lex_maidata_inner(s: Span) -> IResult<Span, Vec<KeyVal>> {
     use nom::character::complete::char;
     use nom::combinator::opt;
     use nom::multi::many0;

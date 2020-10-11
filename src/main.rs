@@ -7,26 +7,17 @@ fn main() {
         .nth(1)
         .expect("usage: $0 <path/to/maidata.txt>");
     let content = read_file(&filename);
-    let lexed = container::lex_maidata(&content);
+    let maidata = container::lex_maidata(&content);
 
-    for kv in lexed {
-        let k = kv.key.fragment();
-        let v = kv.val.fragment();
+    println!("title = {}", maidata.title());
+    println!("artist = {}", maidata.artist());
 
-        if k.starts_with("inote_") {
-            // parse as insns
-            println!("{}:", k);
-            let insns = insn::parse_maidata_insns(kv.val);
-            if let Ok((_, insns)) = insns {
-                let mut mcx = materialize::context::MaterializationContext::with_offset(0.0);
-                let notes = mcx.materialize_insns(insns.iter());
-                println!("<{} notes>", notes.len());
-            } else {
-                panic!("insn parsing failed");
-            }
-        } else {
-            println!("{} = \"{}\"", k, v);
-        };
+    for diff in maidata.iter_difficulties() {
+        println!("difficulty {:?}", diff.difficulty());
+
+        let mut mcx = materialize::context::MaterializationContext::with_offset(0.0);
+        let notes = mcx.materialize_insns(diff.iter_insns());
+        println!("<{} notes>", notes.len());
     }
 }
 
@@ -53,4 +44,14 @@ pub enum Difficulty {
     ReMaster = 6,
     /// The ORIGINAL difficulty, previously called mai:EDIT in 2simai.
     Original = 7,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum Level {
+    /// The "Lv.X" form.
+    Normal(u8),
+    /// The "Lv.X+" form.
+    Plus(u8),
+    /// The special "Lv.<any char>" form.
+    Char(char),
 }
