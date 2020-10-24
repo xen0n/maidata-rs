@@ -205,6 +205,22 @@ pub(crate) fn lex_maidata<'a>(x: &'a str) -> Maidata {
             "artist" => {
                 result.artist = v.to_owned();
             }
+            "first" => {
+                match v.parse() {
+                    Ok(offset) => {
+                        result.fallback_offset = Some(offset);
+                    }
+                    Err(_) => {
+                        // TODO
+                    }
+                }
+            }
+            "des" => {
+                result.fallback_designer = Some(v.to_owned());
+            }
+            "smsg" => {
+                result.fallback_single_message = Some(v.to_owned());
+            }
             _ => println!("unimplemented property: {} = {}", k, v),
         }
     }
