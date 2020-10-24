@@ -64,6 +64,17 @@ where
     }
 }
 
+impl<T> PartialEq for Spanned<T>
+where
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.0.eq(&other.0)
+    }
+}
+
+impl<T> Eq for Spanned<T> where T: Eq + PartialEq {}
+
 impl<T> std::fmt::Display for Spanned<T>
 where
     T: std::fmt::Display,

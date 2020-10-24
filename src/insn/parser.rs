@@ -3,8 +3,6 @@ use nom::character::complete::multispace0;
 use super::*;
 use crate::NomSpan;
 
-type SpannedRawInsn = crate::Spanned<RawInsn>;
-
 pub(crate) fn parse_maidata_insns(input: NomSpan) -> nom::IResult<NomSpan, Vec<SpannedRawInsn>> {
     use nom::multi::many0;
 
@@ -140,12 +138,15 @@ fn t_tap_param(input: NomSpan) -> nom::IResult<NomSpan, TapParams> {
     Ok((s, TapParams { variant, key }))
 }
 
-fn t_tap(input: NomSpan) -> nom::IResult<NomSpan, RawNoteInsn> {
+fn t_tap(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
     let (s, _) = multispace0(input)?;
+    let (s, start_loc) = nom_locate::position(s)?;
     let (s, params) = t_tap_param(s)?;
+    let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
 
-    Ok((s, RawNoteInsn::Tap(params)))
+    let span = (start_loc, end_loc).into();
+    Ok((s, RawNoteInsn::Tap(params).with_span(span)))
 }
 
 fn t_tap_single(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
@@ -161,28 +162,34 @@ fn t_tap_single(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
     Ok((s, RawInsn::Note(note).with_span(span)))
 }
 
+fn t_tap_multi_simplified_every(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
+    let (s, start_loc) = nom_locate::position(input)?;
+    let (s, key) = t_key(s)?;
+    let (s, end_loc) = nom_locate::position(s)?;
+    let (s, _) = multispace0(s)?;
+
+    // all taps are regular ones when using simplified notation
+    let variant = TapVariant::Tap;
+
+    let span = (start_loc, end_loc).into();
+    Ok((
+        s,
+        RawNoteInsn::Tap(TapParams { variant, key }).with_span(span),
+    ))
+}
+
 fn t_tap_multi_simplified(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
     use nom::multi::many1;
 
     let (s, _) = multispace0(input)?;
     let (s, start_loc) = nom_locate::position(s)?;
-    // TODO: do whitespaces inside a taps bundle get ignored as well?
-    let (s, keys) = many1(t_key)(s)?;
+    // all whitespaces are ignored, including those inside a taps bundle
+    // we must parse every key individually (also for getting proper span info)
+    let (s, notes) = many1(t_tap_multi_simplified_every)(s)?;
     let (s, _) = multispace0(s)?;
     let (s, _) = t_note_sep(s)?;
     let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
-
-    // all taps are regular ones when using simplified notation
-    let notes = keys
-        .into_iter()
-        .map(|key| {
-            RawNoteInsn::Tap(TapParams {
-                variant: TapVariant::Tap,
-                key,
-            })
-        })
-        .collect();
 
     let span = (start_loc, end_loc).into();
     Ok((s, RawInsn::NoteBundle(notes).with_span(span)))
@@ -212,16 +219,22 @@ fn t_len(input: NomSpan) -> nom::IResult<NomSpan, Length> {
     Ok((s, Length::NumBeats(NumBeatsParams { divisor, num })))
 }
 
-fn t_hold(input: NomSpan) -> nom::IResult<NomSpan, RawNoteInsn> {
+fn t_hold(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
     use nom::character::complete::char;
 
     let (s, _) = multispace0(input)?;
+    let (s, start_loc) = nom_locate::position(s)?;
     let (s, key) = t_key(s)?;
     let (s, _) = char('h')(s)?;
     let (s, len) = t_len(s)?;
+    let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
 
-    Ok((s, RawNoteInsn::Hold(HoldParams { key, len })))
+    let span = (start_loc, end_loc).into();
+    Ok((
+        s,
+        RawNoteInsn::Hold(HoldParams { key, len }).with_span(span),
+    ))
 }
 
 fn t_hold_single(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
@@ -342,13 +355,15 @@ fn t_slide_sep_track(input: NomSpan) -> nom::IResult<NomSpan, SlideTrack> {
     Ok((s, track))
 }
 
-fn t_slide(input: NomSpan) -> nom::IResult<NomSpan, RawNoteInsn> {
+fn t_slide(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
     use nom::multi::many0;
 
     let (s, _) = multispace0(input)?;
+    let (s, start_loc) = nom_locate::position(s)?;
     let (s, start) = t_tap_param(s)?;
     let (s, first_track) = t_slide_track(s)?;
     let (s, rest_track) = many0(t_slide_sep_track)(s)?;
+    let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
 
     let tracks = {
@@ -358,7 +373,11 @@ fn t_slide(input: NomSpan) -> nom::IResult<NomSpan, RawNoteInsn> {
         tmp
     };
 
-    Ok((s, RawNoteInsn::Slide(SlideParams { start, tracks })))
+    let span = (start_loc, end_loc).into();
+    Ok((
+        s,
+        RawNoteInsn::Slide(SlideParams { start, tracks }).with_span(span),
+    ))
 }
 
 fn t_slide_single(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
@@ -374,7 +393,7 @@ fn t_slide_single(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
     Ok((s, RawInsn::Note(note).with_span(span)))
 }
 
-fn t_bundle_note(input: NomSpan) -> nom::IResult<NomSpan, RawNoteInsn> {
+fn t_bundle_note(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
     let (s, _) = multispace0(input)?;
     // NOTE: tap must come last as it can match on the simplest key, blocking holds and slides from parsing
     let (s, note) = nom::branch::alt((t_hold, t_slide, t_tap))(s)?;
@@ -383,7 +402,7 @@ fn t_bundle_note(input: NomSpan) -> nom::IResult<NomSpan, RawNoteInsn> {
     Ok((s, note))
 }
 
-fn t_bundle_sep_note(input: NomSpan) -> nom::IResult<NomSpan, RawNoteInsn> {
+fn t_bundle_sep_note(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
     use nom::character::complete::char;
 
     let (s, _) = multispace0(input)?;
