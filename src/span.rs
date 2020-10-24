@@ -5,23 +5,9 @@ pub struct Span {
     pub byte_offset: usize,
     pub line: usize,
     pub col: usize,
+    pub end_line: usize,
+    pub end_col: usize,
     pub len: usize,
-}
-
-impl From<NomSpan<'_>> for Span {
-    fn from(x: NomSpan<'_>) -> Self {
-        let byte_offset = x.location_offset();
-        let line = x.location_line() as usize;
-        let col = x.get_utf8_column();
-        let len = x.fragment().len();
-
-        Self {
-            byte_offset,
-            line,
-            col,
-            len,
-        }
-    }
 }
 
 impl Span {
@@ -31,12 +17,16 @@ impl Span {
         let byte_offset = start.location_offset();
         let line = start.location_line() as usize;
         let col = start.get_utf8_column();
+        let end_line = end.location_line() as usize;
+        let end_col = end.get_utf8_column();
         let len = start.offset(&end);
 
         Self {
             byte_offset,
             line,
             col,
+            end_line,
+            end_col,
             len,
         }
     }
@@ -80,7 +70,11 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let span = self.1;
-        write!(f, "[{}:{}]{}", span.line, span.col, self.0)
+        write!(
+            f,
+            "[{}:{}-{}:{}]{}",
+            span.line, span.col, span.end_line, span.end_col, self.0
+        )
     }
 }
 
@@ -90,7 +84,11 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let span = self.1;
-        write!(f, "[{}:{}]{:?}", span.line, span.col, self.0)
+        write!(
+            f,
+            "[{}:{}-{}:{}]{:?}",
+            span.line, span.col, span.end_line, span.end_col, self.0
+        )
     }
 }
 

@@ -40,10 +40,11 @@ fn t_end_mark(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
     use nom::character::complete::char;
 
     let (s, _) = multispace0(input)?;
-    let (s, pos) = nom_locate::position(s)?;
+    let (s, start_loc) = nom_locate::position(s)?;
     let (s, _) = char('E')(s)?;
+    let (s, end_loc) = nom_locate::position(s)?;
 
-    let span = pos.into();
+    let span = (start_loc, end_loc).into();
     Ok((s, RawInsn::EndMark.with_span(span)))
 }
 
@@ -112,11 +113,12 @@ fn t_key(input: NomSpan) -> nom::IResult<NomSpan, Key> {
 
 fn t_rest(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
     let (s, _) = multispace0(input)?;
-    let (s, pos) = nom_locate::position(s)?;
+    let (s, start_loc) = nom_locate::position(s)?;
     let (s, _) = t_note_sep(s)?;
+    let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
 
-    let span = pos.into();
+    let span = (start_loc, end_loc).into();
     Ok((s, RawInsn::Rest.with_span(span)))
 }
 
