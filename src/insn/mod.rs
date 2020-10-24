@@ -22,3 +22,9 @@ pub enum RawInsn {
     NoteBundle(Vec<RawNoteInsn>),
     EndMark,
 }
+
+impl RawInsn {
+    pub fn with_span(self, span: crate::Span) -> crate::Spanned<Self> {
+        crate::Spanned::new(self, span)
+    }
+}

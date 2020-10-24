@@ -1,6 +1,9 @@
 pub mod container;
 pub mod insn;
 pub mod materialize;
+mod span;
+
+pub use span::*;
 
 fn main() {
     let filename = std::env::args()
@@ -35,7 +38,11 @@ fn main() {
 
         let mut mcx = materialize::context::MaterializationContext::with_offset(0.0);
         let notes = mcx.materialize_insns(diff.iter_insns());
-        println!("  <{} notes>", notes.len());
+        println!("  <{} notes materialized>", notes.len());
+
+        for insn in diff.iter_insns() {
+            println!("{:?}", insn);
+        }
     }
 }
 
@@ -43,8 +50,6 @@ fn read_file<P: AsRef<std::path::Path>>(path: P) -> String {
     let content = std::fs::read(path.as_ref()).expect("file reading failed");
     String::from_utf8(content).expect("decoding file content as utf-8 failed")
 }
-
-pub(crate) type NomSpan<'a> = nom_locate::LocatedSpan<&'a str>;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum Difficulty {

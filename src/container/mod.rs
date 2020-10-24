@@ -63,7 +63,7 @@ pub struct BeatmapData {
     designer: Option<String>,
     offset: Option<f32>,
     level: Option<crate::Level>,
-    insns: Vec<crate::insn::RawInsn>,
+    insns: Vec<crate::Spanned<crate::insn::RawInsn>>,
     single_message: Option<String>,
 }
 
@@ -105,7 +105,7 @@ impl<'a> AssociatedBeatmapData<'a> {
         self.map.level.clone()
     }
 
-    pub fn iter_insns(&self) -> impl Iterator<Item = &crate::insn::RawInsn> {
+    pub fn iter_insns(&self) -> impl Iterator<Item = &crate::Spanned<crate::insn::RawInsn>> {
         self.map.insns.iter()
     }
 
