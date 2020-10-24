@@ -44,7 +44,7 @@ fn read_file<P: AsRef<std::path::Path>>(path: P) -> String {
     String::from_utf8(content).expect("decoding file content as utf-8 failed")
 }
 
-pub(crate) type Span<'a> = nom_locate::LocatedSpan<&'a str>;
+pub(crate) type NomSpan<'a> = nom_locate::LocatedSpan<&'a str>;
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum Difficulty {

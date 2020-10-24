@@ -1,12 +1,12 @@
 use nom::IResult;
 
-use crate::Span;
+use crate::NomSpan;
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub(crate) struct KeyVal<'a> {
-    pub key: Span<'a>,
-    pub val: Span<'a>,
+    pub key: NomSpan<'a>,
+    pub val: NomSpan<'a>,
 }
 
 #[derive(Clone, Debug)]
@@ -118,7 +118,7 @@ impl<'a> AssociatedBeatmapData<'a> {
 }
 
 pub(crate) fn lex_maidata<'a>(x: &'a str) -> Maidata {
-    let input = Span::new(x);
+    let input = NomSpan::new(x);
     let output = lex_maidata_inner(input);
 
     let kvs = output.ok().expect("parse maidata failed").1;
@@ -233,7 +233,7 @@ pub(crate) fn lex_maidata<'a>(x: &'a str) -> Maidata {
     result
 }
 
-fn lex_maidata_inner(s: Span) -> IResult<Span, Vec<KeyVal>> {
+fn lex_maidata_inner(s: NomSpan) -> IResult<NomSpan, Vec<KeyVal>> {
     use nom::character::complete::char;
     use nom::combinator::opt;
     use nom::multi::many0;
@@ -253,11 +253,11 @@ fn lex_maidata_inner(s: Span) -> IResult<Span, Vec<KeyVal>> {
 }
 
 // TODO: dedup (with insn::parser::t_eof)
-fn t_eof(input: Span) -> nom::IResult<Span, Span> {
+fn t_eof(input: NomSpan) -> nom::IResult<NomSpan, NomSpan> {
     nom::eof!(input,)
 }
 
-fn lex_keyval(s: Span) -> IResult<Span, KeyVal> {
+fn lex_keyval(s: NomSpan) -> IResult<NomSpan, KeyVal> {
     use nom::bytes::complete::take_till;
     use nom::character::complete::char;
     use nom::character::complete::multispace0;
@@ -304,13 +304,13 @@ fn num_rightmost_whitespaces<S: AsRef<str>>(x: S) -> usize {
     result
 }
 
-fn t_level(s: Span) -> nom::IResult<Span, crate::Level> {
+fn t_level(s: NomSpan) -> nom::IResult<NomSpan, crate::Level> {
     use nom::branch::alt;
 
     alt((t_level_num, t_level_char))(s)
 }
 
-fn t_level_num(s: Span) -> nom::IResult<Span, crate::Level> {
+fn t_level_num(s: NomSpan) -> nom::IResult<NomSpan, crate::Level> {
     use nom::character::complete::char;
     use nom::character::complete::digit1;
     use nom::character::complete::multispace0;
@@ -332,7 +332,7 @@ fn t_level_num(s: Span) -> nom::IResult<Span, crate::Level> {
         },
     ))
 }
-fn t_level_char(s: Span) -> nom::IResult<Span, crate::Level> {
+fn t_level_char(s: NomSpan) -> nom::IResult<NomSpan, crate::Level> {
     use nom::character::complete::anychar;
     use nom::character::complete::char;
     use nom::character::complete::multispace0;
@@ -345,10 +345,10 @@ fn t_level_char(s: Span) -> nom::IResult<Span, crate::Level> {
     Ok((s, crate::Level::Char(ch)))
 }
 
-impl std::convert::TryFrom<Span<'_>> for crate::Level {
+impl std::convert::TryFrom<NomSpan<'_>> for crate::Level {
     type Error = nom::Err<nom::error::ErrorKind>;
 
-    fn try_from(value: Span) -> Result<Self, Self::Error> {
+    fn try_from(value: NomSpan) -> Result<Self, Self::Error> {
         match t_level(value) {
             Ok((_, value)) => Ok(value),
             Err(e) => Err(e.map(|(_, x)| x)),
