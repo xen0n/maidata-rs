@@ -13,11 +13,29 @@ fn main() {
     println!("artist = {}", maidata.artist());
 
     for diff in maidata.iter_difficulties() {
+        use std::borrow::Cow;
+
+        println!();
         println!("difficulty {:?}", diff.difficulty());
+        println!(
+            "  level {}",
+            diff.level()
+                .map_or(Cow::Borrowed("<not set>"), |x| Cow::Owned(format!("{}", x)))
+        );
+        println!(
+            "  offset {}",
+            diff.offset()
+                .map_or(Cow::Borrowed("<not set>"), |x| Cow::Owned(format!("{}", x)))
+        );
+        println!("  designer {}", diff.designer().unwrap_or("<not set>"));
+        println!(
+            "  static message {}",
+            diff.single_message().unwrap_or("<not set>")
+        );
 
         let mut mcx = materialize::context::MaterializationContext::with_offset(0.0);
         let notes = mcx.materialize_insns(diff.iter_insns());
-        println!("<{} notes>", notes.len());
+        println!("  <{} notes>", notes.len());
     }
 }
 
@@ -54,4 +72,17 @@ pub enum Level {
     Plus(u8),
     /// The special "Lv.<any char>" form.
     Char(char),
+}
+
+impl std::fmt::Display for Level {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use Level::*;
+        match self {
+            Normal(lv) => write!(f, "{}", lv)?,
+            Plus(lv) => write!(f, "{}+", lv)?,
+            Char(lv) => write!(f, "{}", lv)?,
+        }
+
+        Ok(())
+    }
 }
