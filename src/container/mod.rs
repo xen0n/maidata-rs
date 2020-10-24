@@ -1,7 +1,7 @@
 use nom::IResult;
 
 use crate::Span;
-use nom::lib::std::collections::HashMap;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub(crate) struct KeyVal<'a> {
@@ -159,7 +159,20 @@ pub(crate) fn lex_maidata<'a>(x: &'a str) -> Maidata {
                         handled = true;
                     }
                     concat!("lv_", stringify!($num)) => {
-                        // TODO
+                        use std::convert::TryInto;
+
+                        let mut data = diff_map
+                            .entry($diff)
+                            .or_insert(BeatmapData::default_with_difficulty($diff));
+                        match kv.val.try_into() {
+                            Ok(lv) => {
+                                data.level = Some(lv);
+                            }
+                            Err(_) => {
+                                // TODO
+                            }
+                        }
+                        handled = true;
                     }
                     concat!("smsg_", stringify!($num)) => {
                         let mut data = diff_map
@@ -273,6 +286,58 @@ fn num_rightmost_whitespaces<S: AsRef<str>>(x: S) -> usize {
     }
 
     result
+}
+
+fn t_level(s: Span) -> nom::IResult<Span, crate::Level> {
+    use nom::branch::alt;
+
+    alt((t_level_num, t_level_char))(s)
+}
+
+fn t_level_num(s: Span) -> nom::IResult<Span, crate::Level> {
+    use nom::character::complete::char;
+    use nom::character::complete::digit1;
+    use nom::character::complete::multispace0;
+    use nom::combinator::opt;
+
+    let (s, num) = digit1(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, plus) = opt(char('+'))(s)?;
+    let (s, _) = multispace0(s)?;
+
+    let lv = num.fragment().parse().unwrap();
+
+    Ok((
+        s,
+        if plus.is_some() {
+            crate::Level::Plus(lv)
+        } else {
+            crate::Level::Normal(lv)
+        },
+    ))
+}
+fn t_level_char(s: Span) -> nom::IResult<Span, crate::Level> {
+    use nom::character::complete::anychar;
+    use nom::character::complete::char;
+    use nom::character::complete::multispace0;
+
+    let (s, _) = char('※')(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, ch) = anychar(s)?;
+    let (s, _) = multispace0(s)?;
+
+    Ok((s, crate::Level::Char(ch)))
+}
+
+impl std::convert::TryFrom<Span<'_>> for crate::Level {
+    type Error = nom::Err<nom::error::ErrorKind>;
+
+    fn try_from(value: Span) -> Result<Self, Self::Error> {
+        match t_level(value) {
+            Ok((_, value)) => Ok(value),
+            Err(e) => Err(e.map(|(_, x)| x)),
+        }
+    }
 }
 
 #[cfg(test)]
