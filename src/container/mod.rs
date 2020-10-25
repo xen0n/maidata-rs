@@ -174,7 +174,7 @@ pub(crate) fn lex_maidata<'a>(x: &'a str) -> Maidata {
                         }
                         handled = true;
                     }
-                    concat!("smsg_", stringify!($num)) => {
+                    concat!("smsg_", stringify!($num)) | concat!("freemsg_", stringify!($num)) => {
                         let mut data = diff_map
                             .entry($diff)
                             .or_insert(BeatmapData::default_with_difficulty($diff));
@@ -218,7 +218,7 @@ pub(crate) fn lex_maidata<'a>(x: &'a str) -> Maidata {
             "des" => {
                 result.fallback_designer = Some(v.to_owned());
             }
-            "smsg" => {
+            "smsg" | "freemsg" => {
                 result.fallback_single_message = Some(v.to_owned());
             }
             _ => println!("unimplemented property: {} = {}", k, v),
