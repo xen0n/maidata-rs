@@ -299,10 +299,44 @@ fn t_hold_single(input: NomSpan) -> PResult<SpRawInsn> {
     Ok((s, RawInsn::Note(note).with_span(span)))
 }
 
-fn t_slide_len(input: NomSpan) -> PResult<SlideLength> {
+fn t_slide_len_simple(input: NomSpan) -> PResult<SlideLength> {
     let (s, len) = t_len(input)?;
 
     Ok((s, SlideLength::Simple(len)))
+}
+
+// NOTE: must run after t_slide_len_simple
+fn t_slide_len_custom(input: NomSpan) -> PResult<SlideLength> {
+    use nom::character::complete::char;
+    use nom::number::complete::float;
+
+    let (s, _) = multispace0(input)?;
+    let (s, _) = char('[')(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, x1) = float(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, _) = char('#')(s)?;
+    let (s, len) = t_len_spec(s)?;
+    let (s, _) = char(']')(s)?;
+    let (s, _) = multispace0(s)?;
+
+    // following cases are possible in this combinator:
+    //
+    // - `[160#8:3]` -> stop time=(as in BPM 160) len=8:3
+    // - `[3##1.5]` -> stop time=(absolute 3s) len=1.5s
+    let stop_time_spec = match len {
+        Length::NumBeats(_) => SlideStopTimeSpec::Bpm(x1),
+        Length::Seconds(_) => SlideStopTimeSpec::Seconds(x1),
+    };
+
+    Ok((s, SlideLength::Custom(stop_time_spec, len)))
+}
+
+fn t_slide_len(input: NomSpan) -> PResult<SlideLength> {
+    use nom::branch::alt;
+
+    // simple variant must come before custom
+    alt((t_slide_len_simple, t_slide_len_custom))(input)
 }
 
 // FxE[len]
