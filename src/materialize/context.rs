@@ -160,14 +160,18 @@ fn materialize_slide_track_params(
     // in simai, stop time is actually encoded (overridden) in the duration spec of individual
     // slide track
     //
-    // TODO: currently overriding stop time is not implemented, hardcoded to 1 beat
-    let stop_time = beat_dur;
+    // take care of this, falling back to beat duration of current bpm
+    let stop_time = match params.len {
+        insn::SlideLength::Simple(_) => beat_dur,
+        insn::SlideLength::Custom(st, _) => stop_time_spec_to_dur(st),
+    };
+
     let start_ts = ts + stop_time;
 
     MaterializedSlideTrack {
         ts,
         start_ts,
-        dur: materialize_duration(params.len, beat_dur),
+        dur: materialize_duration(params.len.slide_duration(), beat_dur),
         start: start_key,
         destination: params.destination.key,
         interim: params.interim.map(|x| x.key),
@@ -187,5 +191,12 @@ fn materialize_duration(x: insn::Length, beat_dur: f32) -> f32 {
     match x {
         insn::Length::NumBeats(p) => divide_beat(beat_dur, p.divisor) * (p.num as f32),
         insn::Length::Seconds(x) => x,
+    }
+}
+
+fn stop_time_spec_to_dur(x: insn::SlideStopTimeSpec) -> f32 {
+    match x {
+        insn::SlideStopTimeSpec::Bpm(override_bpm) => bpm_to_beat_dur(override_bpm),
+        insn::SlideStopTimeSpec::Seconds(x) => x,
     }
 }

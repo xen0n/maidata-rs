@@ -76,6 +76,27 @@ pub enum Length {
     Seconds(f32),
 }
 
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub enum SlideStopTimeSpec {
+    Bpm(f32),
+    Seconds(f32),
+}
+
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub enum SlideLength {
+    Simple(Length),
+    Custom(SlideStopTimeSpec, Length),
+}
+
+impl SlideLength {
+    pub fn slide_duration(&self) -> Length {
+        match self {
+            SlideLength::Simple(l) => *l,
+            SlideLength::Custom(_, l) => *l,
+        }
+    }
+}
+
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct NumBeatsParams {
     pub divisor: u8,
@@ -188,5 +209,5 @@ impl From<SlideTrack> for SlideShape {
 pub struct SlideTrackParams {
     pub destination: TapParams,
     pub interim: Option<TapParams>,
-    pub len: Length,
+    pub len: SlideLength,
 }

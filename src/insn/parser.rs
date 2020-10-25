@@ -299,6 +299,12 @@ fn t_hold_single(input: NomSpan) -> PResult<SpRawInsn> {
     Ok((s, RawInsn::Note(note).with_span(span)))
 }
 
+fn t_slide_len(input: NomSpan) -> PResult<SlideLength> {
+    let (s, len) = t_len(input)?;
+
+    Ok((s, SlideLength::Simple(len)))
+}
+
 // FxE[len]
 // covers everything except FVRE
 macro_rules! define_slide_track {
@@ -314,7 +320,7 @@ macro_rules! define_slide_track {
             // TODO: can slide ends be breaks?
             let (s, destination) = t_tap_param(s)?;
             let (s, _) = multispace0(s)?;
-            let (s, len) = t_len(s)?;
+            let (s, len) = t_slide_len(s)?;
             let (s, _) = multispace0(s)?;
 
             Ok((
@@ -361,7 +367,7 @@ fn t_slide_track_angle(input: NomSpan) -> PResult<SlideTrack> {
     let (s, _) = multispace0(s)?;
     let (s, destination) = t_tap_param(s)?;
     let (s, _) = multispace0(s)?;
-    let (s, len) = t_len(s)?;
+    let (s, len) = t_slide_len(s)?;
     let (s, _) = multispace0(s)?;
 
     Ok((
