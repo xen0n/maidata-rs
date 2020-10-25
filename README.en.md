@@ -32,14 +32,14 @@ Map definition instructions:
     - [ ] star-shape modifier `B$,` `Bb$, B$b,` `B$$,`
 * [x] HOLD `Bh[length],`
     - [x] normal duration spec `[x:y]`
-    - [ ] absolute duration spec `[#float]`
+    - [x] absolute duration spec `[#float]`
 * [x] SLIDE `FxE[length],`
     - [x] all track shapes `- ^ < > v p q s z pp qq V w`
     - [x] multiple tracks sharing one start `1-3[4:1]*-4[4:1]`
     - [ ] absolute duration specs
-        - `[#1.5]`
-        - `[160#2]`
-        - `[3##1.5]`
+        - [x] `[#1.5]`
+        - [ ] `[160#2]`
+        - [ ] `[3##1.5]`
 * [x] BOTH/EACH `note/note,`
     - [x] arbitrary number of concurrent notes allowed (3simai)
 

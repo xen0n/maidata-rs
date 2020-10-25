@@ -222,21 +222,15 @@ fn t_tap_multi_simplified(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawIns
     Ok((s, RawInsn::NoteBundle(notes).with_span(span)))
 }
 
-fn t_len(input: NomSpan) -> nom::IResult<NomSpan, Length> {
+fn t_len_spec_beats(input: NomSpan) -> nom::IResult<NomSpan, Length> {
     use nom::character::complete::char;
     use nom::character::complete::digit1;
 
-    // TODO: absolute time support ('#')
-    let (s, _) = multispace0(input)?;
-    let (s, _) = char('[')(s)?;
-    let (s, _) = multispace0(s)?;
-    let (s, divisor_str) = digit1(s)?;
+    let (s, divisor_str) = digit1(input)?;
     let (s, _) = multispace0(s)?;
     let (s, _) = char(':')(s)?;
     let (s, _) = multispace0(s)?;
     let (s, num_str) = digit1(s)?;
-    let (s, _) = multispace0(s)?;
-    let (s, _) = char(']')(s)?;
     let (s, _) = multispace0(s)?;
 
     // TODO: handle conversion errors
@@ -244,6 +238,34 @@ fn t_len(input: NomSpan) -> nom::IResult<NomSpan, Length> {
     let num = num_str.fragment().parse().unwrap();
 
     Ok((s, Length::NumBeats(NumBeatsParams { divisor, num })))
+}
+
+fn t_len_spec_absolute(input: NomSpan) -> nom::IResult<NomSpan, Length> {
+    let (s, dur) = t_absolute_duration(input)?;
+    let (s, _) = multispace0(s)?;
+
+    Ok((s, Length::Seconds(dur)))
+}
+
+fn t_len_spec(input: NomSpan) -> nom::IResult<NomSpan, Length> {
+    use nom::branch::alt;
+
+    alt((t_len_spec_beats, t_len_spec_absolute))(input)
+}
+
+fn t_len(input: NomSpan) -> nom::IResult<NomSpan, Length> {
+    use nom::character::complete::char;
+
+    // TODO: star-time/BPM overrides
+    let (s, _) = multispace0(input)?;
+    let (s, _) = char('[')(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, len) = t_len_spec(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, _) = char(']')(s)?;
+    let (s, _) = multispace0(s)?;
+
+    Ok((s, len))
 }
 
 fn t_hold(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
