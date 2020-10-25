@@ -24,7 +24,7 @@ Map definition instructions:
 * [x] BPM spec `(float)`
 * [x] beat divisor spec `{4}`
     - [x] normal spec `{4}`
-    - [ ] absolute duration spec `{#0.25}`
+    - [x] absolute duration spec `{#0.25}`
 * [x] end mark `E`
 * [x] TAP `B,`
     - [x] simplified BOTH/EACH TAP form (`16` `38` etc.; `123` and such are also allowed)

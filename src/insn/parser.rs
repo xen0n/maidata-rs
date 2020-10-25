@@ -73,28 +73,58 @@ fn t_bpm(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
     Ok((s, RawInsn::Bpm(BpmParams { new_bpm: bpm }).with_span(span)))
 }
 
-fn t_beat_divisor(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
+fn t_absolute_duration(input: NomSpan) -> nom::IResult<NomSpan, f32> {
     use nom::character::complete::char;
+    use nom::number::complete::float;
+
+    let (s, _) = char('#')(input)?;
+    let (s, _) = multispace0(s)?;
+    let (s, dur) = float(s)?;
+    let (s, _) = multispace0(s)?;
+
+    Ok((s, dur))
+}
+
+fn t_beat_divisor_param_int(input: NomSpan) -> nom::IResult<NomSpan, BeatDivisorParams> {
     use nom::character::complete::digit1;
 
-    let (s, _) = multispace0(input)?;
-    let (s, start_loc) = nom_locate::position(s)?;
-    let (s, _) = char('{')(s)?;
-    let (s, _) = multispace0(s)?;
-    let (s, divisor_str) = digit1(s)?;
-    let (s, _) = multispace0(s)?;
-    let (s, _) = char('}')(s)?;
-    let (s, end_loc) = nom_locate::position(s)?;
+    let (s, divisor_str) = digit1(input)?;
     let (s, _) = multispace0(s)?;
 
     // TODO: out-of-range conversion failures
     let divisor = divisor_str.fragment().parse().unwrap();
 
+    Ok((s, BeatDivisorParams::NewDivisor(divisor)))
+}
+
+fn t_beat_divisor_param_float(input: NomSpan) -> nom::IResult<NomSpan, BeatDivisorParams> {
+    let (s, dur) = t_absolute_duration(input)?;
+    let (s, _) = multispace0(s)?;
+
+    Ok((s, BeatDivisorParams::NewAbsoluteDuration(dur)))
+}
+
+fn t_beat_divisor_param(input: NomSpan) -> nom::IResult<NomSpan, BeatDivisorParams> {
+    use nom::branch::alt;
+
+    alt((t_beat_divisor_param_int, t_beat_divisor_param_float))(input)
+}
+
+fn t_beat_divisor(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
+    use nom::character::complete::char;
+
+    let (s, _) = multispace0(input)?;
+    let (s, start_loc) = nom_locate::position(s)?;
+    let (s, _) = char('{')(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, params) = t_beat_divisor_param(s)?;
+    let (s, _) = multispace0(s)?;
+    let (s, _) = char('}')(s)?;
+    let (s, end_loc) = nom_locate::position(s)?;
+    let (s, _) = multispace0(s)?;
+
     let span = (start_loc, end_loc).into();
-    Ok((
-        s,
-        RawInsn::BeatDivisor(BeatDivisorParams::NewDivisor(divisor)).with_span(span),
-    ))
+    Ok((s, RawInsn::BeatDivisor(params).with_span(span)))
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
