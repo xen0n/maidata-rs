@@ -1,7 +1,7 @@
 use nom::character::complete::multispace0;
 
 use super::*;
-use crate::{NomSpan, PResult};
+use crate::{NomSpan, PResult, WithSpan};
 
 pub(crate) fn parse_maidata_insns(input: NomSpan) -> PResult<Vec<SpRawInsn>> {
     use nom::multi::many0;

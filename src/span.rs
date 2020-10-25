@@ -124,3 +124,15 @@ impl<T> Sp<T> {
         self.0
     }
 }
+
+pub(crate) trait WithSpan {
+    fn with_span(self, sp: crate::Span) -> Sp<Self>
+    where
+        Self: Sized;
+}
+
+impl<T> WithSpan for T {
+    fn with_span(self, sp: Span) -> Sp<Self> {
+        crate::Sp::new(self, sp)
+    }
+}
