@@ -93,10 +93,7 @@ fn t_beat_divisor(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
     let span = (start_loc, end_loc).into();
     Ok((
         s,
-        RawInsn::BeatDivisor(BeatDivisorParams {
-            new_divisor: divisor,
-        })
-        .with_span(span),
+        RawInsn::BeatDivisor(BeatDivisorParams::NewDivisor(divisor)).with_span(span),
     ))
 }
 

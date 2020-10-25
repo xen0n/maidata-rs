@@ -49,7 +49,14 @@ impl MaterializationContext {
                 vec![]
             }
             insn::RawInsn::BeatDivisor(params) => {
-                self.set_beat_divisor(params.new_divisor);
+                match params {
+                    insn::BeatDivisorParams::NewDivisor(new_divisor) => {
+                        self.set_beat_divisor(*new_divisor);
+                    }
+                    insn::BeatDivisorParams::NewAbsoluteDuration(new_note_dur) => {
+                        self.curr_note_dur = *new_note_dur;
+                    }
+                }
                 vec![]
             }
             insn::RawInsn::Rest => {
