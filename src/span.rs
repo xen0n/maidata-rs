@@ -1,5 +1,8 @@
 pub(crate) type NomSpan<'a> = nom_locate::LocatedSpan<&'a str>;
 
+/// Convenient alias for parsing result with spans.
+pub(crate) type PResult<'a, T> = nom::IResult<NomSpan<'a>, T>;
+
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct Span {
     pub byte_offset: usize,

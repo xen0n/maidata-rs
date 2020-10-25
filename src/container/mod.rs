@@ -1,6 +1,6 @@
 use nom::IResult;
 
-use crate::NomSpan;
+use crate::{NomSpan, PResult};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -253,7 +253,7 @@ fn lex_maidata_inner(s: NomSpan) -> IResult<NomSpan, Vec<KeyVal>> {
 }
 
 // TODO: dedup (with insn::parser::t_eof)
-fn t_eof(input: NomSpan) -> nom::IResult<NomSpan, NomSpan> {
+fn t_eof(input: NomSpan) -> PResult<NomSpan> {
     nom::eof!(input,)
 }
 
@@ -304,13 +304,13 @@ fn num_rightmost_whitespaces<S: AsRef<str>>(x: S) -> usize {
     result
 }
 
-fn t_level(s: NomSpan) -> nom::IResult<NomSpan, crate::Level> {
+fn t_level(s: NomSpan) -> PResult<crate::Level> {
     use nom::branch::alt;
 
     alt((t_level_num, t_level_char))(s)
 }
 
-fn t_level_num(s: NomSpan) -> nom::IResult<NomSpan, crate::Level> {
+fn t_level_num(s: NomSpan) -> PResult<crate::Level> {
     use nom::character::complete::char;
     use nom::character::complete::digit1;
     use nom::character::complete::multispace0;
@@ -332,7 +332,7 @@ fn t_level_num(s: NomSpan) -> nom::IResult<NomSpan, crate::Level> {
         },
     ))
 }
-fn t_level_char(s: NomSpan) -> nom::IResult<NomSpan, crate::Level> {
+fn t_level_char(s: NomSpan) -> PResult<crate::Level> {
     use nom::character::complete::anychar;
     use nom::character::complete::char;
     use nom::character::complete::multispace0;

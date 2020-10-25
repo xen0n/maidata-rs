@@ -1,9 +1,9 @@
 use nom::character::complete::multispace0;
 
 use super::*;
-use crate::NomSpan;
+use crate::{NomSpan, PResult};
 
-pub(crate) fn parse_maidata_insns(input: NomSpan) -> nom::IResult<NomSpan, Vec<SpannedRawInsn>> {
+pub(crate) fn parse_maidata_insns(input: NomSpan) -> PResult<Vec<SpannedRawInsn>> {
     use nom::multi::many0;
 
     let (s, insns) = many0(parse_one_maidata_insn)(input)?;
@@ -12,11 +12,11 @@ pub(crate) fn parse_maidata_insns(input: NomSpan) -> nom::IResult<NomSpan, Vec<S
     Ok((s, insns))
 }
 
-fn t_eof(input: NomSpan) -> nom::IResult<NomSpan, NomSpan> {
+fn t_eof(input: NomSpan) -> PResult<NomSpan> {
     nom::eof!(input,)
 }
 
-fn parse_one_maidata_insn(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
+fn parse_one_maidata_insn(input: NomSpan) -> PResult<SpannedRawInsn> {
     let (s, _) = multispace0(input)?;
     let (s, insn) = nom::branch::alt((
         t_bpm,
@@ -34,7 +34,7 @@ fn parse_one_maidata_insn(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawIns
     Ok((s, insn))
 }
 
-fn t_end_mark(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
+fn t_end_mark(input: NomSpan) -> PResult<SpannedRawInsn> {
     use nom::character::complete::char;
 
     let (s, _) = multispace0(input)?;
@@ -46,7 +46,7 @@ fn t_end_mark(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
     Ok((s, RawInsn::EndMark.with_span(span)))
 }
 
-fn t_note_sep(input: NomSpan) -> nom::IResult<NomSpan, ()> {
+fn t_note_sep(input: NomSpan) -> PResult<()> {
     use nom::character::complete::char;
 
     let (s, _) = multispace0(input)?;
@@ -54,7 +54,7 @@ fn t_note_sep(input: NomSpan) -> nom::IResult<NomSpan, ()> {
     Ok((s, ()))
 }
 
-fn t_bpm(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
+fn t_bpm(input: NomSpan) -> PResult<SpannedRawInsn> {
     use nom::character::complete::char;
     use nom::number::complete::float;
 
@@ -73,7 +73,7 @@ fn t_bpm(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
     Ok((s, RawInsn::Bpm(BpmParams { new_bpm: bpm }).with_span(span)))
 }
 
-fn t_absolute_duration(input: NomSpan) -> nom::IResult<NomSpan, f32> {
+fn t_absolute_duration(input: NomSpan) -> PResult<f32> {
     use nom::character::complete::char;
     use nom::number::complete::float;
 
@@ -85,7 +85,7 @@ fn t_absolute_duration(input: NomSpan) -> nom::IResult<NomSpan, f32> {
     Ok((s, dur))
 }
 
-fn t_beat_divisor_param_int(input: NomSpan) -> nom::IResult<NomSpan, BeatDivisorParams> {
+fn t_beat_divisor_param_int(input: NomSpan) -> PResult<BeatDivisorParams> {
     use nom::character::complete::digit1;
 
     let (s, divisor_str) = digit1(input)?;
@@ -97,20 +97,20 @@ fn t_beat_divisor_param_int(input: NomSpan) -> nom::IResult<NomSpan, BeatDivisor
     Ok((s, BeatDivisorParams::NewDivisor(divisor)))
 }
 
-fn t_beat_divisor_param_float(input: NomSpan) -> nom::IResult<NomSpan, BeatDivisorParams> {
+fn t_beat_divisor_param_float(input: NomSpan) -> PResult<BeatDivisorParams> {
     let (s, dur) = t_absolute_duration(input)?;
     let (s, _) = multispace0(s)?;
 
     Ok((s, BeatDivisorParams::NewAbsoluteDuration(dur)))
 }
 
-fn t_beat_divisor_param(input: NomSpan) -> nom::IResult<NomSpan, BeatDivisorParams> {
+fn t_beat_divisor_param(input: NomSpan) -> PResult<BeatDivisorParams> {
     use nom::branch::alt;
 
     alt((t_beat_divisor_param_int, t_beat_divisor_param_float))(input)
 }
 
-fn t_beat_divisor(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
+fn t_beat_divisor(input: NomSpan) -> PResult<SpannedRawInsn> {
     use nom::character::complete::char;
 
     let (s, _) = multispace0(input)?;
@@ -128,7 +128,7 @@ fn t_beat_divisor(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
 }
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
-fn t_key(input: NomSpan) -> nom::IResult<NomSpan, Key> {
+fn t_key(input: NomSpan) -> PResult<Key> {
     use std::convert::TryFrom;
     use nom::combinator::map;
     use nom::character::complete::one_of;
@@ -136,7 +136,7 @@ fn t_key(input: NomSpan) -> nom::IResult<NomSpan, Key> {
     map(one_of("12345678"), |s| Key::try_from(s).unwrap())(input)
 }
 
-fn t_rest(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
+fn t_rest(input: NomSpan) -> PResult<SpannedRawInsn> {
     let (s, _) = multispace0(input)?;
     let (s, start_loc) = nom_locate::position(s)?;
     let (s, _) = t_note_sep(s)?;
@@ -147,7 +147,7 @@ fn t_rest(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
     Ok((s, RawInsn::Rest.with_span(span)))
 }
 
-fn t_tap_param(input: NomSpan) -> nom::IResult<NomSpan, TapParams> {
+fn t_tap_param(input: NomSpan) -> PResult<TapParams> {
     use nom::character::complete::char;
     use nom::combinator::opt;
 
@@ -165,7 +165,7 @@ fn t_tap_param(input: NomSpan) -> nom::IResult<NomSpan, TapParams> {
     Ok((s, TapParams { variant, key }))
 }
 
-fn t_tap(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
+fn t_tap(input: NomSpan) -> PResult<SpannedRawNoteInsn> {
     let (s, _) = multispace0(input)?;
     let (s, start_loc) = nom_locate::position(s)?;
     let (s, params) = t_tap_param(s)?;
@@ -176,7 +176,7 @@ fn t_tap(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
     Ok((s, RawNoteInsn::Tap(params).with_span(span)))
 }
 
-fn t_tap_single(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
+fn t_tap_single(input: NomSpan) -> PResult<SpannedRawInsn> {
     let (s, _) = multispace0(input)?;
     let (s, start_loc) = nom_locate::position(s)?;
     let (s, note) = t_tap(s)?;
@@ -189,7 +189,7 @@ fn t_tap_single(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
     Ok((s, RawInsn::Note(note).with_span(span)))
 }
 
-fn t_tap_multi_simplified_every(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
+fn t_tap_multi_simplified_every(input: NomSpan) -> PResult<SpannedRawNoteInsn> {
     let (s, start_loc) = nom_locate::position(input)?;
     let (s, key) = t_key(s)?;
     let (s, end_loc) = nom_locate::position(s)?;
@@ -205,7 +205,7 @@ fn t_tap_multi_simplified_every(input: NomSpan) -> nom::IResult<NomSpan, Spanned
     ))
 }
 
-fn t_tap_multi_simplified(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
+fn t_tap_multi_simplified(input: NomSpan) -> PResult<SpannedRawInsn> {
     use nom::multi::many1;
 
     let (s, _) = multispace0(input)?;
@@ -222,7 +222,7 @@ fn t_tap_multi_simplified(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawIns
     Ok((s, RawInsn::NoteBundle(notes).with_span(span)))
 }
 
-fn t_len_spec_beats(input: NomSpan) -> nom::IResult<NomSpan, Length> {
+fn t_len_spec_beats(input: NomSpan) -> PResult<Length> {
     use nom::character::complete::char;
     use nom::character::complete::digit1;
 
@@ -240,20 +240,20 @@ fn t_len_spec_beats(input: NomSpan) -> nom::IResult<NomSpan, Length> {
     Ok((s, Length::NumBeats(NumBeatsParams { divisor, num })))
 }
 
-fn t_len_spec_absolute(input: NomSpan) -> nom::IResult<NomSpan, Length> {
+fn t_len_spec_absolute(input: NomSpan) -> PResult<Length> {
     let (s, dur) = t_absolute_duration(input)?;
     let (s, _) = multispace0(s)?;
 
     Ok((s, Length::Seconds(dur)))
 }
 
-fn t_len_spec(input: NomSpan) -> nom::IResult<NomSpan, Length> {
+fn t_len_spec(input: NomSpan) -> PResult<Length> {
     use nom::branch::alt;
 
     alt((t_len_spec_beats, t_len_spec_absolute))(input)
 }
 
-fn t_len(input: NomSpan) -> nom::IResult<NomSpan, Length> {
+fn t_len(input: NomSpan) -> PResult<Length> {
     use nom::character::complete::char;
 
     // TODO: star-time/BPM overrides
@@ -268,7 +268,7 @@ fn t_len(input: NomSpan) -> nom::IResult<NomSpan, Length> {
     Ok((s, len))
 }
 
-fn t_hold(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
+fn t_hold(input: NomSpan) -> PResult<SpannedRawNoteInsn> {
     use nom::character::complete::char;
 
     let (s, _) = multispace0(input)?;
@@ -286,7 +286,7 @@ fn t_hold(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
     ))
 }
 
-fn t_hold_single(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
+fn t_hold_single(input: NomSpan) -> PResult<SpannedRawInsn> {
     let (s, _) = multispace0(input)?;
     let (s, start_loc) = nom_locate::position(s)?;
     let (s, note) = t_hold(s)?;
@@ -304,7 +304,7 @@ fn t_hold_single(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
 macro_rules! define_slide_track {
     (@ $fn_name: ident, $recog: expr, $variant: ident) => {
         #[allow(unused_imports)]
-        fn $fn_name(input: NomSpan) -> nom::IResult<NomSpan, SlideTrack> {
+        fn $fn_name(input: NomSpan) -> PResult<SlideTrack> {
             use nom::character::complete::char;
             use nom::bytes::complete::tag;
 
@@ -350,7 +350,7 @@ define_slide_track!(t_slide_track_pp, tag "pp", Pp);
 define_slide_track!(t_slide_track_qq, tag "qq", Qq);
 define_slide_track!(t_slide_track_spread, char 'w', Spread);
 
-fn t_slide_track_angle(input: NomSpan) -> nom::IResult<NomSpan, SlideTrack> {
+fn t_slide_track_angle(input: NomSpan) -> PResult<SlideTrack> {
     use nom::character::complete::char;
 
     let (s, _) = multispace0(input)?;
@@ -374,7 +374,7 @@ fn t_slide_track_angle(input: NomSpan) -> nom::IResult<NomSpan, SlideTrack> {
     ))
 }
 
-fn t_slide_track(input: NomSpan) -> nom::IResult<NomSpan, SlideTrack> {
+fn t_slide_track(input: NomSpan) -> PResult<SlideTrack> {
     nom::branch::alt((
         t_slide_track_line,
         t_slide_track_arc,
@@ -392,7 +392,7 @@ fn t_slide_track(input: NomSpan) -> nom::IResult<NomSpan, SlideTrack> {
     ))(input)
 }
 
-fn t_slide_sep_track(input: NomSpan) -> nom::IResult<NomSpan, SlideTrack> {
+fn t_slide_sep_track(input: NomSpan) -> PResult<SlideTrack> {
     use nom::character::complete::char;
 
     let (s, _) = multispace0(input)?;
@@ -404,7 +404,7 @@ fn t_slide_sep_track(input: NomSpan) -> nom::IResult<NomSpan, SlideTrack> {
     Ok((s, track))
 }
 
-fn t_slide(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
+fn t_slide(input: NomSpan) -> PResult<SpannedRawNoteInsn> {
     use nom::multi::many0;
 
     let (s, _) = multispace0(input)?;
@@ -429,7 +429,7 @@ fn t_slide(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
     ))
 }
 
-fn t_slide_single(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
+fn t_slide_single(input: NomSpan) -> PResult<SpannedRawInsn> {
     let (s, _) = multispace0(input)?;
     let (s, start_loc) = nom_locate::position(s)?;
     let (s, note) = t_slide(s)?;
@@ -442,7 +442,7 @@ fn t_slide_single(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
     Ok((s, RawInsn::Note(note).with_span(span)))
 }
 
-fn t_bundle_note(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
+fn t_bundle_note(input: NomSpan) -> PResult<SpannedRawNoteInsn> {
     let (s, _) = multispace0(input)?;
     // NOTE: tap must come last as it can match on the simplest key, blocking holds and slides from parsing
     let (s, note) = nom::branch::alt((t_hold, t_slide, t_tap))(s)?;
@@ -451,7 +451,7 @@ fn t_bundle_note(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
     Ok((s, note))
 }
 
-fn t_bundle_sep_note(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn> {
+fn t_bundle_sep_note(input: NomSpan) -> PResult<SpannedRawNoteInsn> {
     use nom::character::complete::char;
 
     let (s, _) = multispace0(input)?;
@@ -463,7 +463,7 @@ fn t_bundle_sep_note(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawNoteInsn
     Ok((s, note))
 }
 
-fn t_bundle(input: NomSpan) -> nom::IResult<NomSpan, SpannedRawInsn> {
+fn t_bundle(input: NomSpan) -> PResult<SpannedRawInsn> {
     use nom::multi::many1;
 
     let (s, _) = multispace0(input)?;
