@@ -18,22 +18,22 @@ pub enum RawInsn {
     Bpm(BpmParams),
     BeatDivisor(BeatDivisorParams),
     Rest,
-    Note(crate::Spanned<RawNoteInsn>),
-    NoteBundle(Vec<crate::Spanned<RawNoteInsn>>),
+    Note(SpRawNoteInsn),
+    NoteBundle(crate::VecSp<RawNoteInsn>),
     EndMark,
 }
 
 impl RawInsn {
-    pub fn with_span(self, span: crate::Span) -> crate::Spanned<Self> {
-        crate::Spanned::new(self, span)
+    pub fn with_span(self, span: crate::Span) -> crate::Sp<Self> {
+        crate::Sp::new(self, span)
     }
 }
 
 impl RawNoteInsn {
-    pub fn with_span(self, span: crate::Span) -> crate::Spanned<Self> {
-        crate::Spanned::new(self, span)
+    pub fn with_span(self, span: crate::Span) -> crate::Sp<Self> {
+        crate::Sp::new(self, span)
     }
 }
 
-pub type SpannedRawInsn = crate::Spanned<RawInsn>;
-pub type SpannedRawNoteInsn = crate::Spanned<RawNoteInsn>;
+pub type SpRawInsn = crate::Sp<RawInsn>;
+pub type SpRawNoteInsn = crate::Sp<RawNoteInsn>;

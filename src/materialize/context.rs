@@ -23,10 +23,7 @@ impl MaterializationContext {
     }
 
     /// Materialize a list of raw instructions into notes.
-    pub(crate) fn materialize_insns<
-        'a,
-        I: IntoIterator<Item = &'a crate::Spanned<insn::RawInsn>>,
-    >(
+    pub(crate) fn materialize_insns<'a, I: IntoIterator<Item = &'a crate::Sp<insn::RawInsn>>>(
         &mut self,
         insns: I,
     ) -> Vec<Note> {
@@ -38,10 +35,7 @@ impl MaterializationContext {
     }
 
     /// Read in one raw instruction and materialize into note(s) if applicable.
-    pub(crate) fn materialize_raw_insn(
-        &mut self,
-        insn: &crate::Spanned<insn::RawInsn>,
-    ) -> Vec<Note> {
+    pub(crate) fn materialize_raw_insn(&mut self, insn: &crate::Sp<insn::RawInsn>) -> Vec<Note> {
         use std::ops::Deref;
         match insn.deref() {
             insn::RawInsn::Bpm(params) => {

@@ -40,9 +40,14 @@ impl From<(NomSpan<'_>, NomSpan<'_>)> for Span {
         Span::from_start_end(x.0, x.1)
     }
 }
-pub struct Spanned<T>(T, crate::Span);
 
-impl<T> std::ops::Deref for Spanned<T> {
+/// Thing with span information attached.
+pub struct Sp<T>(T, crate::Span);
+
+/// Convenient alias for working with lists of Sp-ed things.
+pub type VecSp<T> = Vec<Sp<T>>;
+
+impl<T> std::ops::Deref for Sp<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -50,15 +55,15 @@ impl<T> std::ops::Deref for Spanned<T> {
     }
 }
 
-impl<T> std::ops::DerefMut for Spanned<T> {
+impl<T> std::ops::DerefMut for Sp<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl<T> Copy for Spanned<T> where T: Copy {}
+impl<T> Copy for Sp<T> where T: Copy {}
 
-impl<T> Clone for Spanned<T>
+impl<T> Clone for Sp<T>
 where
     T: Clone,
 {
@@ -67,7 +72,7 @@ where
     }
 }
 
-impl<T> PartialEq for Spanned<T>
+impl<T> PartialEq for Sp<T>
 where
     T: PartialEq,
 {
@@ -76,9 +81,9 @@ where
     }
 }
 
-impl<T> Eq for Spanned<T> where T: Eq + PartialEq {}
+impl<T> Eq for Sp<T> where T: Eq + PartialEq {}
 
-impl<T> std::fmt::Display for Spanned<T>
+impl<T> std::fmt::Display for Sp<T>
 where
     T: std::fmt::Display,
 {
@@ -92,7 +97,7 @@ where
     }
 }
 
-impl<T> std::fmt::Debug for Spanned<T>
+impl<T> std::fmt::Debug for Sp<T>
 where
     T: std::fmt::Debug,
 {
@@ -106,7 +111,7 @@ where
     }
 }
 
-impl<T> Spanned<T> {
+impl<T> Sp<T> {
     pub fn new(obj: T, span: crate::Span) -> Self {
         Self(obj, span)
     }
