@@ -10,7 +10,7 @@ pub(crate) struct KeyVal<'a> {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct Maidata {
+pub struct Maidata {
     title: String,
     artist: String,
 
@@ -117,7 +117,7 @@ impl<'a> AssociatedBeatmapData<'a> {
     }
 }
 
-pub(crate) fn lex_maidata<'a>(x: &'a str) -> Maidata {
+pub fn lex_maidata<'a>(x: &'a str) -> Maidata {
     let input = NomSpan::new(x);
     let output = lex_maidata_inner(input);
 

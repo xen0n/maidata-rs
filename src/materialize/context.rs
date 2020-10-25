@@ -4,7 +4,7 @@ use crate::materialize::{
     MaterializedHold, MaterializedSlideTrack, MaterializedTap, MaterializedTapShape,
 };
 
-pub(crate) struct MaterializationContext {
+pub struct MaterializationContext {
     // TODO: is slides' default stop time really independent of BPM changes?
     // currently it is dependent -- add a separate non-changing value (initialized by the "wholebpm"
     // thing) to move to independent
@@ -14,7 +14,7 @@ pub(crate) struct MaterializationContext {
 }
 
 impl MaterializationContext {
-    pub(crate) fn with_offset(offset_secs: f32) -> Self {
+    pub fn with_offset(offset_secs: f32) -> Self {
         Self {
             curr_beat_dur: 0.0,
             curr_note_dur: 0.0,
@@ -23,7 +23,7 @@ impl MaterializationContext {
     }
 
     /// Materialize a list of raw instructions into notes.
-    pub(crate) fn materialize_insns<'a, I: IntoIterator<Item = &'a crate::Sp<insn::RawInsn>>>(
+    pub fn materialize_insns<'a, I: IntoIterator<Item = &'a crate::Sp<insn::RawInsn>>>(
         &mut self,
         insns: I,
     ) -> Vec<Note> {
@@ -35,7 +35,7 @@ impl MaterializationContext {
     }
 
     /// Read in one raw instruction and materialize into note(s) if applicable.
-    pub(crate) fn materialize_raw_insn(&mut self, insn: &crate::Sp<insn::RawInsn>) -> Vec<Note> {
+    fn materialize_raw_insn(&mut self, insn: &crate::Sp<insn::RawInsn>) -> Vec<Note> {
         use std::ops::Deref;
         match insn.deref() {
             insn::RawInsn::Bpm(params) => {

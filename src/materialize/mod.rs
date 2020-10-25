@@ -1,4 +1,6 @@
-pub(crate) mod context;
+mod context;
+
+pub use context::*;
 
 use crate::insn::{Key, SlideShape};
 
