@@ -42,7 +42,7 @@ fn t_end_mark(s: NomSpan) -> PResult<SpRawInsn> {
     let (s, _) = char('E')(s)?;
     let (s, end_loc) = nom_locate::position(s)?;
 
-    let span = (start_loc, end_loc).into();
+    let span = (start_loc, end_loc);
     Ok((s, RawInsn::EndMark.with_span(span)))
 }
 
@@ -68,7 +68,7 @@ fn t_bpm(s: NomSpan) -> PResult<SpRawInsn> {
     let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
 
-    let span = (start_loc, end_loc).into();
+    let span = (start_loc, end_loc);
 
     Ok((s, RawInsn::Bpm(BpmParams { new_bpm: bpm }).with_span(span)))
 }
@@ -123,7 +123,7 @@ fn t_beat_divisor(s: NomSpan) -> PResult<SpRawInsn> {
     let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
 
-    let span = (start_loc, end_loc).into();
+    let span = (start_loc, end_loc);
     Ok((s, RawInsn::BeatDivisor(params).with_span(span)))
 }
 
@@ -143,7 +143,7 @@ fn t_rest(s: NomSpan) -> PResult<SpRawInsn> {
     let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
 
-    let span = (start_loc, end_loc).into();
+    let span = (start_loc, end_loc);
     Ok((s, RawInsn::Rest.with_span(span)))
 }
 
@@ -172,7 +172,7 @@ fn t_tap(s: NomSpan) -> PResult<SpRawNoteInsn> {
     let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
 
-    let span = (start_loc, end_loc).into();
+    let span = (start_loc, end_loc);
     Ok((s, RawNoteInsn::Tap(params).with_span(span)))
 }
 
@@ -185,7 +185,7 @@ fn t_tap_single(s: NomSpan) -> PResult<SpRawInsn> {
     let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
 
-    let span = (start_loc, end_loc).into();
+    let span = (start_loc, end_loc);
     Ok((s, RawInsn::Note(note).with_span(span)))
 }
 
@@ -198,7 +198,7 @@ fn t_tap_multi_simplified_every(s: NomSpan) -> PResult<SpRawNoteInsn> {
     // all taps are regular ones when using simplified notation
     let variant = TapVariant::Tap;
 
-    let span = (start_loc, end_loc).into();
+    let span = (start_loc, end_loc);
     Ok((
         s,
         RawNoteInsn::Tap(TapParams { variant, key }).with_span(span),
@@ -218,7 +218,7 @@ fn t_tap_multi_simplified(s: NomSpan) -> PResult<SpRawInsn> {
     let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
 
-    let span = (start_loc, end_loc).into();
+    let span = (start_loc, end_loc);
     Ok((s, RawInsn::NoteBundle(notes).with_span(span)))
 }
 
@@ -279,7 +279,7 @@ fn t_hold(s: NomSpan) -> PResult<SpRawNoteInsn> {
     let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
 
-    let span = (start_loc, end_loc).into();
+    let span = (start_loc, end_loc);
     Ok((
         s,
         RawNoteInsn::Hold(HoldParams { key, len }).with_span(span),
@@ -295,7 +295,7 @@ fn t_hold_single(s: NomSpan) -> PResult<SpRawInsn> {
     let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
 
-    let span = (start_loc, end_loc).into();
+    let span = (start_loc, end_loc);
     Ok((s, RawInsn::Note(note).with_span(span)))
 }
 
@@ -462,7 +462,7 @@ fn t_slide(s: NomSpan) -> PResult<SpRawNoteInsn> {
         tmp
     };
 
-    let span = (start_loc, end_loc).into();
+    let span = (start_loc, end_loc);
     Ok((
         s,
         RawNoteInsn::Slide(SlideParams { start, tracks }).with_span(span),
@@ -478,7 +478,7 @@ fn t_slide_single(s: NomSpan) -> PResult<SpRawInsn> {
     let (s, end_loc) = nom_locate::position(s)?;
     let (s, _) = multispace0(s)?;
 
-    let span = (start_loc, end_loc).into();
+    let span = (start_loc, end_loc);
     Ok((s, RawInsn::Note(note).with_span(span)))
 }
 
@@ -523,6 +523,6 @@ fn t_bundle(s: NomSpan) -> PResult<SpRawInsn> {
         tmp
     };
 
-    let span = (start_loc, end_loc).into();
+    let span = (start_loc, end_loc);
     Ok((s, RawInsn::NoteBundle(notes).with_span(span)))
 }
